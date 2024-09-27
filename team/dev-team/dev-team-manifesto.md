@@ -7,7 +7,7 @@ This document is the primary source of truth around dev practices and establishe
 1. You know how to use `git`
 2. You know how to write a clear and concise commit message
 3. You are familiar (or will become familiar) with how to effectively utilize GitHub and the tools which it provides for colaboration and clear, directed communcation amongst the development team members
-4. You will keep all conversations about proposed code changes, PR's and developer-centered issue tracking within GitHub.
+4. You will keep all conversations about proposed code changes, PR's and development-centered issue tracking within GitHub.
 5. If you are unclear on any dev processes you will reach out to a senior member of the team to clarify your understanding and become a better dev to work with
 
 ## `git` Workflow Overview
