@@ -1,0 +1,18 @@
+(release: <release-version-tag>): <YYYY_mm_dd> - <brief-descriptive-title>
+
+## Release Overview
+
+A brief paragraph outlining, in broad overview, changes at a very high level. Don't get into rabbit-trails, or "in the weeds", about details. The details should go in the "Changes" sub-section. This section should be as short as possible, while highlighting the entire set of general areas of change.
+
+## Specific Changes
+
+- <change 01> - Brief detail of the specific change
+- <change 02> - Brief detail of another specific change
+  - Additional sub-bullets if deemed necessary.
+- <change 03> - Keep it brief.
+
+## Disposition Refs
+
+[issue 1]
+[ticket 1]
+[dev someghuser]
