@@ -1,0 +1,184 @@
+---
+- name: Prepare VPS for FiveM
+  hosts: localhost
+  become: true
+  vars_files:
+    - vars/main.yml
+    - vars/prod.yml
+    - vars/staging.yml
+    - vars/dev.yml
+  
+  tasks:
+    - name: Update apt and install required dependencies
+      ansible.builtin.apt:
+        update_cache: true
+        name: "{{ item }}"
+        state: present
+      loop:
+        - git
+        - curl
+        - wget
+        - screen
+        - xz-utils
+        - libatomic1
+        - libc++-dev
+        - libssl-dev
+        - zlib1g
+        - build-essential
+        - ufw
+        - docker-compose
+    
+    - name: Open tcp ports
+      ufw:
+        rule: allow
+        port: "{{ item }}"
+        proto: tcp
+      loop:
+        - "3306"
+        - "3307"
+        - "3308"
+        - "30120"
+        - "30121"
+        - "30122"
+        - "40120"
+        - "40121"
+        - "40122"
+
+    - name: Open udp ports
+      ufw:
+        rule: allow
+        port: "{{ item }}"
+        proto: udp
+      loop:
+        - "30120"
+        - "30121"
+        - "30122"
+
+    - name: Create dedicated FiveM service users and home directories
+      ansible.builtin.user:
+        name: "{{ service_base_name }}{{ item }}"
+        shell: /bin/bash
+        home: "/home/{{ service_base_name }}{{ item }}"
+        state: present
+        create_home: true
+      loop:
+        - "_prod"
+        - "_staging"
+        - "_dev"
+
+    - name: Create service dirctories for all environments
+      become: true
+      become_user: root
+      ansible.builtin.file:
+        path: "{{ service_deploy_base_path }}/{{ service_base_name }}{{ item }}/server-data"
+        state: directory
+        owner: "{{ service_base_name }}{{ item }}"
+        group: "{{ service_base_name }}{{ item }}"
+      loop:
+        - "_prod"
+        - "_staging"
+        - "_dev"
+
+    - name: Download server binaries
+      become: true
+      ansible.builtin.get_url:
+        url: "{{ fivem_disribution_url }}/{{ fivem_server_distribution_file }}"
+        dest: {{ ansible_user_dir }}
+
+    - name: Copy distribution files to service directory
+      become: true
+      become_user: root
+      ansible.builtin.copy:
+        src: "{{ ansible_user_dir }}/{{ fivem_server_distribution_file }}"
+        dest: "{{ service_deploy_base_path }}/{{ service_base_name }}{{ item }}/server/"
+      loop:
+        - "_prod"
+        - "_staging"
+        - "_dev"
+
+    - name: Add GitHub to known_hosts
+      ansible.builtin.shell: |
+        ssh-keyscan -H github.com >> /etc/ssh/ssh_known_hosts
+
+    - name: Clone initial server-data to all environments
+      ansible.builtin.shell: |
+        git clone https://github.com/citizenfx/cfx-server-data.git {{ item }}/server-data
+      loop:
+        - "{{ service_deploy_base_path }}/{{ service_base_name }}_prod"
+        - "{{ service_deploy_base_path }}/{{ service_base_name }}_staging"
+        - "{{ service_deploy_base_path }}/{{ service_base_name }}_dev"
+        
+    - name: Extract distribution binaries
+      become: true
+      become_user: root
+      ansible.builtin.shell: |
+        cd "{{ item }}/server"
+        tar -xvf fx.tar.xz
+        rm fx.tar.xz
+      loop:
+        - "{{ service_deploy_base_path }}/{{ service_base_name }}_prod"
+        - "{{ service_deploy_base_path }}/{{ service_base_name }}_staging"
+        - "{{ service_deploy_base_path }}/{{ service_base_name }}_dev"
+
+    - name: Set proper ownership for FiveM server directory
+      become: true
+      ansible.builtin.command: chown -R {{ item }}:{{ item }} {{ service_deploy_base_path }}/{{ item }}/server
+      loop:
+        - "{{ service_base_name }}_prod"
+        - "{{ service_base_name }}_staging"
+        - "{{ service_base_name }}_dev"
+
+    - name: Set proper ownership for FiveM server-data directory
+      become: true
+      ansible.builtin.command: chown -R {{ item }}:{{ item }} {{ service_deploy_base_path }}/{{ item }}/server-data
+      loop:
+        - "{{ service_base_name }}_prod"
+        - "{{ service_base_name }}_staging"
+        - "{{ service_base_name }}_dev"
+
+    - name: Generate server.cfg template file
+      ansible.builtin.template:
+        src: server.cfg.j2
+        dest: "{{ service_deploy_base_path }}/{{ item }}/server-data/server.cfg"
+        owner: "{{ item }}"
+        group: "{{ item }}"
+      loop:
+        - "{{ service_base_name }}_prod"
+        - "{{ service_base_name }}_staging"
+        - "{{ service_base_name }}_dev"
+
+    - name: Create a basic systemd service for FiveM
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/{{ item }}.service
+        content: |
+          [Unit]
+          Description={{ item }} Server
+          After=docker.service
+          Requires=docker.service
+
+          [Service]
+          User={{ item }}
+          WorkingDirectory={{ service_deploy_base_path }}/{{ item }}
+          ExecStart={{ service_deploy_dir }}/run.sh +exec {{ service_deploy_dir }}/server-data/server.cfg
+          Restart=on-failure
+
+          [Install]
+          WantedBy=multi-user.target
+      loop:
+        - "{{ service_base_name }}_prod"
+        - "{{ service_base_name }}_staging"
+        - "{{ service_base_name }}_dev"
+
+    - name: Reload systemd to pick up the new service
+      ansible.builtin.systemd:
+        daemon_reload: true
+
+    - name: Enable and start FiveM server on boot
+      ansible.builtin.systemd:
+        name: {{ item  }}
+        enabled: true
+        state: started
+      loop:
+        - "{{ service_base_name }}_prod"
+        - "{{ service_base_name }}_staging"
+        - "{{ service_base_name }}_dev"

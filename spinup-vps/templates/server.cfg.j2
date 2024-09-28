@@ -1,0 +1,69 @@
+# server.cfg for FiveM
+
+# Basic server settings
+endpoint_add_tcp "{{ fivem_server_tcp_port }}"
+endpoint_add_upd "{{ fivem_server_udp_port }}"
+endpoint_add_tcp "{{ fivem_txadmin_port }}"
+sv_maxclients {{ fivem_max_clients }}
+set steam_webApiKey "{{ steam_webApiKey }}"
+sets tags "{{ fivem_server_tags }}"
+
+# Instance Configs
+sv_licenseKey "{{ fivem_license_key }}"
+sv_hostname "{{ fivem_server_name }}"
+sets sv_projectName "{{ fivem_project_name }}"
+sets sv_projectDesc "{{ fivem_project_desc }}"
+sets locale "{{ fivem_locale }}"
+load_server_icon {{ fivem_server_icon }}
+sv_enforceGameBuild {{ fivem_enforce_game_build }}
+set resources_useSystemChat {{ fivem_use_system_chat_bool }}
+set mysql_connection_string {{ fivem_mysql_connection_string }}
+
+# Voice config
+setr voice_useNativeAudio {{ fivem_voice_config_use_native_audio_boolean }}
+setr voice_useSendingRangeOnly {{ fivem_voice_config_use_sending_range_only_boolean }}
+setr voice_defaultCycle {{ fivem_voice_config_default_cycle_string }}
+setr voice_defaultVolume {{ fivem_voice_config_default_volume_float }}
+setr voice_enableRadioAnim {{ fivem_voice_config_enable_radio_anim_integer }}
+setr voice_syncData {{ fivem_voice_config_sync_data_integer }}
+
+# QBCore locale config
+setr qb_locale "{{ fivem_qbcore_locale_string }}"
+
+# QBCore UseTarget
+setr UseTarget {{ fivem_qbcore_use_target_boolean }}
+
+# Required scripts
+ensure mapmanager
+ensure chat
+ensure spawnmanager
+ensure sessionmanager
+ensure basic-gamemode
+ensure hardcap
+ensure baseevents
+
+# Alternative required scripts
+ensure screenshot-basic
+ensure fmsdk
+
+## Permissions
+add_ace group.{{ fivem_admin_group_name_string }} command allow # allow all commands
+add_ace group.{{ fivem_admin_group_name_string }} command.quit deny # but don't allow quit
+# add_principal identifier.fivem:{{ fivem_admin_principal_lead_id_integer }} group.{{ fivem_admin_group_name_string }}
+add_principal identifier.fivem:1 group.{{ fivem_admin_group_name_string }}
+add_principal identifier.steam:{{ fivem_admin_principal_lead_id_steam }} group.{{ fivem_admin_group_name_string }}
+
+# Resources
+add_ace resource.qb-core command allow # Allow qb-core to execute commands
+
+# Gods
+add_ace qbcore.god command allow # Allow all commands
+
+# Inheritance
+add_principal qbcore.god group.{{ fivem_admin_group_name_string }} # Allow gods access to the main admin group used to get all default permissions
+add_principal qbcore.god qbcore.admin # Allow gods access to admin commands
+add_principal qbcore.admin qbcore.mod # Allow admins access to mod commands
+
+
+# Enable RCON admin
+rcon_password "{{ fivem_rcon_password }}"
