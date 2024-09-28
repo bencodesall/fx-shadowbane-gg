@@ -1,12 +1,12 @@
 ---
 - name: Prepare VPS for FiveM
-  hosts: localhost
+  hosts: all_servers
   become: true
   vars_files:
     - vars/main.yml
-    - vars/prod.yml
-    - vars/staging.yml
-    - vars/dev.yml
+  vars:
+    - service_dir_fivem: "{{ service_deploy_base_path }}/{{ fivem_server_name }}_{{ service_base_name }}"
+    - service_dir_mariadb: "{{ service_deploy_base_path }}/{{ fivem_server_name }}_{{ service_mariadb_base_name }}"
   
   tasks:
     - name: Update apt and install required dependencies
@@ -54,30 +54,23 @@
         - "30121"
         - "30122"
 
+
     - name: Create dedicated FiveM service users and home directories
       ansible.builtin.user:
-        name: "{{ service_base_name }}{{ item }}"
+        name: "{{ service_base_name }}_{{ fivem_server_name }}"
         shell: /bin/bash
-        home: "/home/{{ service_base_name }}{{ item }}"
+        home: "/home/{{ service_base_name }}_{{ fivem_server_name }}"
         state: present
         create_home: true
-      loop:
-        - "_prod"
-        - "_staging"
-        - "_dev"
 
     - name: Create service dirctories for all environments
       become: true
       become_user: root
       ansible.builtin.file:
-        path: "{{ service_deploy_base_path }}/{{ service_base_name }}{{ item }}/server-data"
+        path: "{{ service_deploy_base_path }}/{{ service_base_name }}_{{ fivem_server_name }}/server-data"
         state: directory
-        owner: "{{ service_base_name }}{{ item }}"
-        group: "{{ service_base_name }}{{ item }}"
-      loop:
-        - "_prod"
-        - "_staging"
-        - "_dev"
+        owner: "{{ service_base_name }}_{{ fivem_server_name }}"
+        group: "{{ service_base_name }}_{{ fivem_server_name }}"
 
     - name: Download server binaries
       become: true
@@ -146,6 +139,28 @@
         - "{{ service_base_name }}_prod"
         - "{{ service_base_name }}_staging"
         - "{{ service_base_name }}_dev"
+
+    - name: Create a basic systemd service for databases
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/{{ item }}.service
+        content: |
+          [Unit]
+          Description={{ item }} MariaDB
+          After=docker.service
+          Requires=docker.service
+
+          [Service]
+          User={{ item }}
+          WorkingDirectory={{ service_deploy_base_path }}/{{ item }}
+          ExecStart={{ service_deploy_dir }}/run.sh +exec {{ service_deploy_dir }}/server-data/server.cfg
+          Restart=on-failure
+
+          [Install]
+          WantedBy=multi-user.target
+      loop:
+        - "{{ service_base_name }}_db_prod"
+        - "{{ service_base_name }}_db_staging"
+        - "{{ service_base_name }}_db_dev"
 
     - name: Create a basic systemd service for FiveM
       ansible.builtin.copy:

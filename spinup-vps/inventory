@@ -1,2 +1,14 @@
-[vps]
-15.204.232.81
+[production]
+prod_host ansible_host=localhost
+
+[staging]
+stage_host ansible_host=localhost
+
+[development]
+dev_host ansible_host=localhost
+
+# Optional grouping to target all environments together
+[all_servers:children]
+development
+prod
+staging

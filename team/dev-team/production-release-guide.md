@@ -8,7 +8,7 @@ Generally code changes should be deployed only on a preestablished schedule. The
 
 ### Release Deployment Overview
 
-The release of new "artifacts" to production should will follow the procedure below:
+The release of new "artifacts" to production will follow the procedure below:
 
 1. The QA team will have created a "tagged release" within the `staging` branch of the GitHub repository. This should trigger an automatic "pull request", or "PR" to the `main` branch of the repository.
 2. A member of the "production team" should review the PR for accuracy in the description of changes. All production PRs should follow the guideline example as described in [Production PR Specifications](production-pr-specification.md)

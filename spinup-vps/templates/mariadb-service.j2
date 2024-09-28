@@ -1,0 +1,15 @@
+# templates/mariadb-service.j2
+[Unit]
+Description=Docker Compose for mariadb {{ server_name }} environment
+Requires=docker.service
+After=docker.service
+
+[Service]
+WorkingDirectory={{ service_deploy_base_path }}/{{ server_name }}
+ExecStart=/usr/local/bin/docker-compose up -d
+ExecStop=/usr/local/bin/docker-compose down
+Restart=always
+User=root
+
+[Install]
+WantedBy=multi-user.target
