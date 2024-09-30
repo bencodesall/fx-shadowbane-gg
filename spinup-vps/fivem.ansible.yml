@@ -10,6 +10,7 @@
     - service_dir_fxserver: "{{ service_deploy_base_path }}/{{ fx_service_name  }}"
     - service_dir_mariadb: "{{ service_mariadb_base_path }}/{{ mariadb_service_name }}"
 
+
   pre_tasks:
     - name: Update apt package index
       ansible.builtin.apt:
@@ -231,6 +232,7 @@
     #     state: directory
     #     owner: "{{ mariadb_service_name }}"
     #     group: "{{ mariadb_service_name }}"
+
 
     - name: Download server binaries
       become: true
