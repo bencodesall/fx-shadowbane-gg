@@ -9,7 +9,7 @@ services:
     ports:
       - "{{ mariadb_port }}:3306"
     volumes:
-      - /var/fivem/{{ fivem_server_name }}/mariadb_data:/var/lib/mysql
+      - {{ service_dir_mariadb }}/mariadb_data:/var/lib/mysql
     networks:
       - {{ fivem_docker_network }}
 
