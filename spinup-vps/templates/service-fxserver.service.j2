@@ -1,0 +1,13 @@
+[Unit]
+Description={{ fx_service_name }} Server
+After=network.target
+
+[Service]
+User={{ fx_service_name }}
+WorkingDirectory={{ service_dir_fxserver }}
+ExecStart={{ service_dir_fxserver }}/run.sh +exec {{ service_dir_fxserver }}/server-data/server.cfg
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target

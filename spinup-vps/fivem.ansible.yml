@@ -1,0 +1,240 @@
+---
+- name: Prepare VPS for FiveM
+  hosts: all_servers
+  become: true
+  vars_files:
+    - vars/main.yml
+  vars:
+    - fx_service_name: "{{ fivem_server_name }}_{{ service_base_name }}"
+    - mariadb_service_name: "{{ fivem_server_name }}_{{ service_mariadb_base_name }}"
+    - service_dir_fxserver: "{{ service_deploy_base_path }}/{{ fx_service_name  }}"
+    - service_dir_mariadb: "{{ service_mariadb_base_path }}/{{ mariadb_service_name }}"
+  
+  tasks:
+    - name: Update apt and install required dependencies
+      ansible.builtin.apt:
+        update_cache: true
+        name: "{{ item }}"
+        state: present
+      loop:
+        - git
+        - curl
+        - wget
+        - screen
+        - xz-utils
+        - libatomic1
+        - libc++-dev
+        - libssl-dev
+        - zlib1g
+        - build-essential
+        - ufw
+        - docker-compose
+    
+    - name: Open required ports
+      ansible.builtin.ufw:
+        rule: allow
+        port: "{{ item.port }}"
+        proto: "{{ item.proto }}"
+      loop:
+        - { port: "{{ fivem_server_tcp_port }}", proto: "tcp" }
+        - { port: "{{ fivem_server_udp_port }}", proto: "udp" }
+        - { port: "{{ fivem_txadmin_port }}", proto: "tcp" }
+        - { port: "{{ mariadb_port }}", proto: "tcp" }
+
+    # - name: Open tcp ports
+    #   ufw:
+    #     rule: allow
+    #     port: "{{ fivem_server_tcp_port }}"
+    #     proto: tcp
+
+    # - name: Open udp ports
+    #   ufw:
+    #     rule: allow
+    #     port: "{{ fivem_server_udp_port }}"
+    #     proto: udp
+
+    # - name: Open txadmin tcp ports
+    #   ufw:
+    #     rule: allow
+    #     port: "{{ fivem_txadmin_port }}"
+    #     proto: tcp
+
+    # - name: Open MariaDB tcp ports
+    #   ufw:
+    #     rule: allow
+    #     port: "{{ mariadb_port }}"
+    #     proto: tcp
+
+    - name: Create dedicated FiveM service users and home directories
+      ansible.builtin.user:
+        name: "{{ fx_service_name }}"
+        shell: /bin/bash
+        home: "/home/{{ fx_service_name }}"
+        state: present
+        create_home: true
+
+    - name: Create server-data dirctories for all environments
+      become: true
+      become_user: root
+      ansible.builtin.file:
+        path: "{{ service_dir_fxserver }}/server-data"
+        state: directory
+        owner: "{{ fx_service_name }}"
+        group: "{{ fx_service_name }}"
+
+    - name: Create server dirctories for all environments
+      become: true
+      become_user: root
+      ansible.builtin.file:
+        path: "{{ service_dir_fxserver }}/server"
+        state: directory
+        owner: "{{ fx_service_name }}"
+        group: "{{ fx_service_name }}"
+
+    - name: Create database directories for all environments
+      become: true
+      become_user: root
+      ansible.builtin.file:
+        path: "{{ service_dir_mariadb }}"
+        state: directory
+        owner: "{{ mariadb_service_name }}"
+        group: "{{ mariadb_service_name }}"
+
+    - name: Create database directories for all environments
+      become: true
+      become_user: root
+      ansible.builtin.file:
+        path: "{{ service_dir_mariadb }}/mariadb_data"
+        state: directory
+        owner: "{{ mariadb_service_name }}"
+        group: "{{ mariadb_service_name }}"
+
+    - name: Download server binaries
+      become: true
+      ansible.builtin.get_url:
+        url: "{{ fx_source_download_url }}"
+        dest: {{ ansible_user_dir }}
+      retries: 3
+      delay: 5
+
+    - name: Copy distribution files to service directory
+      become: true
+      become_user: root
+      ansible.builtin.copy:
+        src: "{{ ansible_user_dir }}/fx.tar.xz"
+        dest: "{{ service_dir_fxserver }}/server/"
+
+    - name: Add GitHub to known_hosts
+      ansible.builtin.known_hosts:
+        name: github.com
+        key: "{{ lookup('pipe', 'ssh-keyscan -t rsa github.com') }}"
+        path: /etc/ssh/ssh_known_hosts
+
+    # - name: Add GitHub to known_hosts
+    #   ansible.builtin.shell: |
+    #     ssh-keyscan -H github.com >> /etc/ssh/ssh_known_hosts
+
+    - name: Example clone of a single branch
+      ansible.builtin.git:
+        repo: https://github.com/citizenfx/cfx-server-data.git
+        dest: "{{ ansible_user_dir }}"
+        single_branch: yes
+        version: master
+      retries: 3
+      delay: 5
+
+    # - name: Clone initial server-data to all environments
+    #   ansible.builtin.shell: |
+    #     git clone https://github.com/citizenfx/cfx-server-data.git {{ service_dir_fxserver }}/server-data/
+
+    - name: Extract distribution binaries
+      become: true
+      become_user: root
+      ansible.builtin.shell: |
+        cd "{{ service_dir_fxserver }}/server"
+        tar -xvf fx.tar.xz
+        rm fx.tar.xz
+
+    - name: Set proper ownership for FiveM server directory
+      become: true
+      ansible.builtin.command: chown -R {{ fx_service_name }}:{{ fx_service_name }} {{ service_dir_fxserver }}/server
+
+    - name: Set proper ownership for FiveM server-data directory
+      become: true
+      ansible.builtin.command: chown -R {{ fx_service_name }}:{{ fx_service_name }} {{ service_dir_fxserver }}/server-data
+
+    - name: Generate server.cfg template file
+      ansible.builtin.template:
+        src: server.cfg.j2
+        dest: "{{ service_dir_fxserver }}/server-data/server.cfg"
+        owner: "{{ fx_service_name }}"
+        group: "{{ fx_service_name }}"
+
+    - name: Generate systemd for fivem_disribution_url
+      ansible.builtin.template:
+        src: service-fxserver.j2
+        dest: /etc/systemd/system/{{ fx_service_name }}.service
+        owner: "{{ fx_service_name }}"
+        group: "{{ fx_service_name }}"
+
+    - name: Generate docker-compose for MariaDB service
+      ansible.builtin.template:
+        src: docker-compose-mariadb.yml.j2
+        dest: "{{ service_dir_mariadb }}/docker-compose.yml"
+        owner: "{{ mariadb_service_name }}"
+        group: "{{ mariadb_service_name }}"
+        
+    - name: Generate systemd for databases
+      ansible.builtin.template:
+        src: service-mariadb.j2
+        dest: /etc/systemd/system/{{ mariadb_service_name }}.service
+        owner: "{{ mariadb_service_name }}"
+        group: "{{ mariadb_service_name }}"
+
+    
+# # TODO: Docker service ExecStart
+#     - name: Create a basic systemd service for databases
+#       ansible.builtin.copy:
+#         dest: /etc/systemd/system/{{ mariadb_service_name }}_{{  }}.service
+#         content: |
+#           [Unit]
+#           Description={{ mariadb_service_name }} MariaDB
+#           After=docker.service
+#           Requires=docker.service
+
+#           [Service]
+#           User={{ mariadb_service_name }}
+#           WorkingDirectory={{ service_dir_mariadb }}
+#           ExecStart={{ service_dir_mariadb }}/server/run.sh +exec {{ service_deploy_dir }}/server-data/server.cfg
+#           Restart=on-failure
+
+#           [Install]
+#           WantedBy=multi-user.target
+
+#     - name: Create a basic systemd service for FiveM
+#       ansible.builtin.copy:
+#         dest: /etc/systemd/system/{{ fx_service_name }}.service
+#         content: |
+#           [Unit]
+#           Description={{ fx_service_name }} Server
+#           After=docker.service
+#           Requires=docker.service
+
+#           [Service]
+#           User={{ fx_service_name }}
+#           WorkingDirectory={{ service_dir_fxserver }}
+#           ExecStart={{ service_dir_fxserver }}/run.sh +exec {{ service_dir_fxserver }}/server-data/server.cfg
+#           Restart=on-failure
+
+#           [Install]
+#           WantedBy=multi-user.target
+
+    - name: Reload systemd to pick up the new service
+      ansible.builtin.systemd:
+        daemon_reload: true
+
+    - name: Enable and start FiveM server on boot
+      ansible.builtin.systemd:
+        name: "{{ fx_service_name }}"
+        enabled: true
+        state: started
