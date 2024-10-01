@@ -3,15 +3,19 @@ version: '3'
 services:
   mariadb:
     image: mariadb:latest
+    constainer_name: {{ mariadb_service_name }}
     environment:
       MYSQL_ROOT_PASSWORD: {{ mariadb_root_password }}
       MYSQL_DATABASE: {{ mariadb_name }}
+      MYSQL_USER: {{ mariadb_username }}
+      MYSQL_PASSWORD: {{ mariadb_password }}
     ports:
       - "{{ mariadb_port }}:3306"
     volumes:
       - {{ service_dir_mariadb }}/mariadb_data:/var/lib/mysql
     networks:
       - {{ fivem_docker_network }}
+    restart: always
 
 networks:
   {{ fivem_docker_network }}:

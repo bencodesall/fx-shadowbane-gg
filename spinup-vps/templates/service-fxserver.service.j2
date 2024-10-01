@@ -3,11 +3,16 @@ Description={{ fx_service_name }} Server
 After=network.target
 
 [Service]
-User={{ fx_service_name }}
-WorkingDirectory={{ service_dir_fxserver }}
-ExecStart={{ service_dir_fxserver }}/run.sh +exec {{ service_dir_fxserver }}/server-data/server.cfg
-Restart=on-failure
-RestartSec=5s
+Type=simple
+User=fivem
+Group=fivem_admins
+WorkingDirectory={{ service_dir_fxserver }}/server-data
+ExecStart={{ service_dir_fxserver }}/server/run.sh +exec {{ service_dir_fxserver }}/server-data/server.cfg
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=fivem_{{ environment_name }}
 
 [Install]
 WantedBy=multi-user.target
