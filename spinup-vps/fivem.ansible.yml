@@ -12,10 +12,12 @@
 
   pre_tasks:
     - name: Update apt package index
+      become: true
       ansible.builtin.apt:
         update_cache: true
 
     - name: Install essential packages
+      become: true
       ansible.builtin.apt:
         name:
           - git
@@ -36,29 +38,33 @@
       when: inventory_hostname == 'prod_host'
 
     - name: Install Docker.io
+      become: true
       ansible.builtin.apt:
         name: docker.io
         state: present
       when: inventory_hostname == 'prod_host'
 
     - name: Enable Docker service
+      become: true
       ansible.builtin.systemd:
         name: docker
         enabled: true
         state: started
       when: inventory_hostname == 'prod_host'
 
-    - name: Create fivem_admins group
+    - name: Create fivem group
+      become: true
       ansible.builtin.group:
-        name: fivem_admins
+        name: fivem
         state: present
       when: inventory_hostname == 'prod_host'
 
     - name: Create fivem user
+      become: true
       ansible.builtin.user:
         name: fivem
-        groups: 
-          - fivem_admins
+        groups:
+          - fivem
           - docker
         home: /srv/fivem
         shell: /bin/bash
@@ -66,27 +72,21 @@
         create_home: true
 
     - name: Add the current user to the Docker and FiveM Admins groups
+      become: true
       ansible.builtin.user:
         name: ansible_user
-        groups: docker, fivem_admins
+        groups: docker, fivem
         append: true
       when: inventory_hostname == 'prod_host'
 
-    # - name: Add users to docer and fivem_admins groups
-    #   user:
-    #     name: "{{ item }}"
-    #     groups: fivem_admins
-    #     append: yes
-    #   loop: "{{ fivem_admins_users }}"
-    #   when: inventory_hostname == 'prod_host'
-
   tasks:
     - name: Ensure required directories are present
+      become: true
       ansible.builtin.file:
         path: "{{ item }}"
         state: directory
         mode: '0775'
-        group: fivem_admins
+        group: fivem
         owner: fivem
       loop:
         - "{{ service_dir_fxserver }}"
@@ -96,30 +96,40 @@
         - "{{ service_dir_mariadb }}/mariadb_data"
 
     - name: Setup systemd service for fxserver
+      become: true
       ansible.builtin.template:
         src: templates/service-fxserver.service.j2
         dest: "/etc/systemd/system/fxserver-{{ environment_name }}.service"
         mode: "0600"
+        group: fivem
+        owner: fivem
       notify:
         - Reload systemd
         - Enable fxserver service
 
     - name: Setup docker-compose file for txAdmin database
+      become: true
       ansible.builtin.template:
         src: templates/docker-compose-mariadb.yml.j2
         dest: "{{ service_dir_mariadb }}/docker-compose.yml"
         mode: "0600"
+        group: fivem
+        owner: fivem
 
     - name: Setup systemd service for docker-compose database
       ansible.builtin.template:
+        become: true
         src: templates/service-mariadb.service.j2
         dest: "/etc/systemd/system/fivem-db-{{ environment_name }}.service"
         mode: "0600"
+        group: fivem
+        owner: fivem
       notify:
         - Reload systemd
         - Enable docker-compose-db service
 
     - name: Ensure iptables rules are applied
+      become: true
       ansible.builtin.iptables:
         chain: INPUT
         protocol: "{{ item.protocol }}"
@@ -135,99 +145,21 @@
         - Save iptables rules
 
     - name: Enable IP forwarding and NAT rules (required for public availability)
+      become: true
       ansible.posix.sysctl:
         name: net.ipv4.ip_forward
         value: 1
         state: present
         sysctl_set: true
 
+    # TODO: Get these working
     - name: Allow txAdmin and RCON access for admin group
+      become: true
       ansible.builtin.lineinfile:
         path: "/etc/sudoers"
         state: present
-        regexp: "^%fivem_admins"
-        line: "%fivem_admins ALL=(ALL) NOPASSWD: /usr/bin/mysql, /usr/bin/curl, /usr/local/bin/fxadmin-cli"
-
-    # - name: Setup GitHub Actions deployment directory
-    #   file:
-    #     path: "/srv/fivem/{{ environment_name }}/deploy"
-    #     state: directory
-    #     mode: '0755'
-
-    # - name: Deploy initial environment code from GitHub
-    #   git:
-    #     repo: "{{ git_repo_url }}"
-    #     dest: "/srv/fivem/{{ environment_name }}"
-    #     version: "{{ branch_name }}"
-    #     update: yes
-
-# TODO: Troubleshoot firewall port opening
-    # - name: Open required ports
-    #   ansible.builtin.ufw:
-    #     rule: allow
-    #     port: "{{ item.port }}"
-    #     proto: "{{ item.proto }}"
-    #   loop:
-    #     - { port: "{{ fivem_server_tcp_port }}", proto: "tcp" }
-    #     - { port: "{{ fivem_server_udp_port }}", proto: "udp" }
-    #     - { port: "{{ fivem_txadmin_port }}", proto: "tcp" }
-    #     - { port: "{{ mariadb_port }}", proto: "tcp" }
-
-    # - name: Create dedicated FiveM service users and home directories
-    #   ansible.builtin.user:
-    #     name: "{{ fx_service_name }}"
-    #     shell: /bin/bash
-    #     home: "/home/{{ fx_service_name }}"
-    #     state: present
-
-    # - name: Create database users for all environments
-    #   ansible.builtin.user:
-    #     name: "{{ mariadb_service_name }}"
-    #     state: present
-    #     shell: /bin/bash
-
-    # - name: Crate fxserver users for all environments
-    #   ansible.builtin.user:
-    #     name: "{{ fx_service_name }}"
-    #     state: present
-    #     shell: /bin/bash
-
-    # - name: Create server-data dirctories for all environments
-    #   become: true
-    #   become_user: root
-    #   ansible.builtin.file:
-    #     path: "{{ service_dir_fxserver }}/server-data"
-    #     state: directory
-    #     owner: "{{ fx_service_name }}"
-    #     group: "{{ fx_service_name }}"
-
-    # - name: Create server dirctories for all environments
-    #   become: true
-    #   become_user: root
-    #   ansible.builtin.file:
-    #     path: "{{ service_dir_fxserver }}/server"
-    #     state: directory
-    #     owner: "{{ fx_service_name }}"
-    #     group: "{{ fx_service_name }}"
-
-    # - name: Create database directories for all environments
-    #   become: true
-    #   become_user: root
-    #   ansible.builtin.file:
-    #     path: "{{ service_dir_mariadb }}"
-    #     state: directory
-    #     owner: "{{ mariadb_service_name }}"
-    #     group: "{{ mariadb_service_name }}"
-
-    # - name: Create database directories for all environments
-    #   become: true
-    #   become_user: root
-    #   ansible.builtin.file:
-    #     path: "{{ service_dir_mariadb }}/mariadb_data"
-    #     state: directory
-    #     owner: "{{ mariadb_service_name }}"
-    #     group: "{{ mariadb_service_name }}"
-
+        regexp: "^%fivem"
+        line: "%fivem ALL=(ALL) NOPASSWD: /usr/bin/mysql, /usr/bin/curl, /usr/local/bin/fxadmin-cli"
 
     - name: Download server binaries
       become: true
@@ -240,26 +172,19 @@
       when: inventory_hostname == 'prod_host'
 
     - name: Extract FXServer tar file
+      become: true
       ansible.builtin.unarchive:
         src: /tmp/fx.tar.xz
         dest: "{{ service_dir_fxserver }}/server"
         remote_src: true
         owner: fivem
-        group: fivem_admins
+        group: fivem
 
     - name: Remove the downloaded tar file
+      become: true
       ansible.builtin.file:
         path: /tmp/fx.tar.xz
         state: absent
-
-#     - name: Copy distribution files to service directory
-#       become: true
-#       # become_user: root
-#       ansible.builtin.copy:
-#         src: "{{ ansible_user_dir }}/fx.tar.xz"
-#         dest: "{{ service_dir_fxserver }}/server/"
-#         remote_src: true
-#         mode: preserve
 
     - name: Add GitHub to known_hosts
       ansible.builtin.known_hosts:
@@ -269,6 +194,7 @@
 
 # TODO: See if this can be refactored
     - name: Configure Git to treat the directory as safe
+      become: true
       ansible.builtin.command:
         cmd: "git config --global --add safe.directory {{ service_dir_fxserver }}/server-data"
       register: github_safe_dir
@@ -282,134 +208,62 @@
       retries: 3
       delay: 5
 
-#     - name: Extract distribution binaries
-#       become: true
-#       # become_user: fivem
-#       ansible.builtin.shell: |
-#         cd "{{ service_dir_fxserver }}/server"
-#         tar -xvf fx.tar.xz
-#         rm fx.tar.xz
-#       register: extract_binaries
-#       changed_when: false
-
-    # - name: Set proper ownership for FiveM server directory
-    #   become: true
-    #   ansible.builtin.command: chown -R {{ fx_service_name }}:{{ fx_service_name }} {{ service_dir_fxserver }}/server
-
-    # - name: Set proper ownership for FiveM server-data directory
-    #   become: true
-    #   ansible.builtin.command: chown -R {{ fx_service_name }}:{{ fx_service_name }} {{ service_dir_fxserver }}/server-data
-
     - name: Generate server.cfg template file
+      become: true
       ansible.builtin.template:
         src: server.cfg.j2
         dest: "{{ service_dir_fxserver }}/server-data/server.cfg"
         # owner: "{{ fx_service_name }}"
         owner: fivem
-        group: fivem_admins
+        group: fivem
         mode: "0775"
 
-    # - name: Generate systemd for fivem_disribution_url
-    #   ansible.builtin.template:
-    #     src: service-fxserver.service.j2
-    #     dest: /etc/systemd/system/{{ fx_service_name }}.service
-    #     owner: "{{ fx_service_name }}"
-    #     group: "{{ fx_service_name }}"
-
     - name: Generate docker-compose for MariaDB service
+      become: true
       ansible.builtin.template:
         src: docker-compose-mariadb.yml.j2
         dest: "{{ service_dir_mariadb }}/docker-compose.yml"
         owner: fivem
-        group: fivem_admins
+        group: fivem
         mode: "0775"
 
     - name: Generate systemd for databases
+      become: true
       ansible.builtin.template:
         src: service-mariadb.service.j2
         dest: /etc/systemd/system/fivem-db-{{ environment_name }}.service
         owner: fivem
-        group: fivem_admins
+        group: fivem
         mode: "0775"
-
-    # - name: Reload systemd to pick up the new service
-    #   ansible.builtin.systemd:
-    #     daemon_reload: true
-
-    # - name: Enable and start FiveM server on boot
-    #   ansible.builtin.systemd:
-    #     name: "{{ fx_service_name }}"
-    #     enabled: true
-    #     state: started
-
-#     - name: Ensure fxserver files group and owner are set correctly
-#       ansible.builtin.file:
-#         path: "{{ service_dir_fxserver }}"
-#         owner: fivem
-#         group: fivem_admins
-#         recurse: true
-#       become: true
-#       when: service_dir_fxserver is defined and service_dir_fxserver.startswith("/srv/fivem/")
-#
-#     - name: Ensure MariaDb files group and owner are set correctly
-#       ansible.builtin.file:
-#         path: "{{ service_dir_mariadb }}"
-#         owner: fivem
-#         group: fivem_admins
-#         recurse: true
-#       become: true
-#       when: service_dir_mariadb is defined and service_dir_mariadb.startswith("/var/fivem/")
-
-#     - name: Find all files and directories in fxserver directory
-#       find:
-#         paths: "{{ service_dir_fxserver }}"
-#         recurse: yes
-#       register: fxserver_files
-#
-#     - name: Change ownership of fxserver files
-#       file:
-#         path: "{{ item.path }}"
-#         owner: fivem
-#         group: fivem_admins
-#       loop: "{{ fxserver_files.files }}"
-#       become: true
-#
-#     - name: Find all files and directories in mariadb directory
-#       find:
-#         paths: "{{ service_dir_mariadb }}"
-#         recurse: yes
-#       register: mariadb_files
-#
-#     - name: Change ownership of mariadb files
-#       file:
-#         path: "{{ item.path }}"
-#         owner: fivem
-#         group: fivem_admins
-#       loop: "{{ mariadb_files.files }}"
-#       become: true
 
   handlers:
     - name: Reload systemd
+      become: true
       ansible.builtin.systemd:
         daemon_reload: true
-      become: true
 
     - name: Enable fxserver service
+      become: true
       ansible.builtin.systemd:
         name: "fxserver-{{ environment_name }}.service"
         enabled: true
         state: started
-      become: true
 
     - name: Enable docker-compose-db service
+      become: true
       ansible.builtin.systemd:
         name: "fivem-db-{{ environment_name }}.service"
         enabled: true
         state: started
-      become: true
 
     - name: Save iptables rules
-      ansible.builtin.command: iptables-save > /etc/iptables/rules.v4
+      become: true
+      ansible.builtin.command: sudo netfilter-persistent save
       register: iptables_saved
       changed_when: false
-      become: true
+
+    # - name: Save iptables rules
+    #   become: true
+    #   ansible.builtin.command: iptables-save > /etc/iptables/rules.v4
+    #   register: iptables_saved
+    #   changed_when: false
