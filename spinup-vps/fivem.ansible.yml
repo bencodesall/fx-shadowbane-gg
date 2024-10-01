@@ -58,6 +58,9 @@
       ansible.builtin.user:
         name: fivem
         group: fivem_admins
+        groups:
+          - fivem_admins
+          - docker
         home: "{{ service_dir_fxserver }}"
         shell: /bin/bash
         system: true
