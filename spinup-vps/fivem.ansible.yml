@@ -57,7 +57,6 @@
     - name: Create fivem user
       ansible.builtin.user:
         name: fivem
-        group: fivem_admins
         groups:
           - fivem_admins
           - docker
