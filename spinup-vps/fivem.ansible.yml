@@ -57,10 +57,10 @@
     - name: Create fivem user
       ansible.builtin.user:
         name: fivem
-        groups:
+        groups: 
           - fivem_admins
           - docker
-        home: "{{ service_dir_fxserver }}"
+        home: /srv/fivem
         shell: /bin/bash
         system: true
         create_home: true
@@ -233,20 +233,33 @@
       become: true
       ansible.builtin.get_url:
         url: "{{ fx_source_download_url }}"
-        dest: "{{ ansible_user_dir }}"
-        mode: "0755"
+        dest: /tmp/fx.tar.xz
+        mode: "0644"
       retries: 3
       delay: 5
       when: inventory_hostname == 'prod_host'
 
-    - name: Copy distribution files to service directory
-      become: true
-      # become_user: root
-      ansible.builtin.copy:
-        src: "{{ ansible_user_dir }}/fx.tar.xz"
-        dest: "{{ service_dir_fxserver }}/server/"
+    - name: Extract FXServer tar file
+      ansible.builtin.unarchive:
+        src: /tmp/fx.tar.xz
+        dest: "{{ service_dir_fxserver }}/server"
         remote_src: true
-        mode: preserve
+        owner: fivem
+        group: fivem_admins
+
+    - name: Remove the downloaded tar file
+      ansible.builtin.file:
+        path: /tmp/fx.tar.xz
+        state: absent
+
+#     - name: Copy distribution files to service directory
+#       become: true
+#       # become_user: root
+#       ansible.builtin.copy:
+#         src: "{{ ansible_user_dir }}/fx.tar.xz"
+#         dest: "{{ service_dir_fxserver }}/server/"
+#         remote_src: true
+#         mode: preserve
 
     - name: Add GitHub to known_hosts
       ansible.builtin.known_hosts:
@@ -269,15 +282,15 @@
       retries: 3
       delay: 5
 
-    - name: Extract distribution binaries
-      become: true
-      # become_user: fivem
-      ansible.builtin.shell: |
-        cd "{{ service_dir_fxserver }}/server"
-        tar -xvf fx.tar.xz
-        rm fx.tar.xz
-      register: extract_binaries
-      changed_when: false
+#     - name: Extract distribution binaries
+#       become: true
+#       # become_user: fivem
+#       ansible.builtin.shell: |
+#         cd "{{ service_dir_fxserver }}/server"
+#         tar -xvf fx.tar.xz
+#         rm fx.tar.xz
+#       register: extract_binaries
+#       changed_when: false
 
     # - name: Set proper ownership for FiveM server directory
     #   become: true
@@ -329,22 +342,52 @@
     #     enabled: true
     #     state: started
 
-    - name: Ensure fxserver files group and owner are set correctly
-      ansible.builtin.file:
-        path: "{{ service_dir_fxserver }}"
-        owner: fivem
-        group: fivem_admins
-        recurse: true
-      become: true
+#     - name: Ensure fxserver files group and owner are set correctly
+#       ansible.builtin.file:
+#         path: "{{ service_dir_fxserver }}"
+#         owner: fivem
+#         group: fivem_admins
+#         recurse: true
+#       become: true
+#       when: service_dir_fxserver is defined and service_dir_fxserver.startswith("/srv/fivem/")
+#
+#     - name: Ensure MariaDb files group and owner are set correctly
+#       ansible.builtin.file:
+#         path: "{{ service_dir_mariadb }}"
+#         owner: fivem
+#         group: fivem_admins
+#         recurse: true
+#       become: true
+#       when: service_dir_mariadb is defined and service_dir_mariadb.startswith("/var/fivem/")
 
-    - name: Ensure MariaDB files group and owner are set correctly
-      ansible.builtin.file:
-        path: "{{ service_dir_mariadb }}"
-        owner: fivem
-        group: fivem_admins
-        recurse: true
-      become: true
-    
+#     - name: Find all files and directories in fxserver directory
+#       find:
+#         paths: "{{ service_dir_fxserver }}"
+#         recurse: yes
+#       register: fxserver_files
+#
+#     - name: Change ownership of fxserver files
+#       file:
+#         path: "{{ item.path }}"
+#         owner: fivem
+#         group: fivem_admins
+#       loop: "{{ fxserver_files.files }}"
+#       become: true
+#
+#     - name: Find all files and directories in mariadb directory
+#       find:
+#         paths: "{{ service_dir_mariadb }}"
+#         recurse: yes
+#       register: mariadb_files
+#
+#     - name: Change ownership of mariadb files
+#       file:
+#         path: "{{ item.path }}"
+#         owner: fivem
+#         group: fivem_admins
+#       loop: "{{ mariadb_files.files }}"
+#       become: true
+
   handlers:
     - name: Reload systemd
       ansible.builtin.systemd:
