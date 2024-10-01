@@ -1,9 +1,9 @@
 # server.cfg for FiveM
 
 # Basic server settings
-endpoint_add_tcp "{{ fivem_server_tcp_port }}"
-endpoint_add_upd "{{ fivem_server_udp_port }}"
-endpoint_add_tcp "{{ fivem_txadmin_port }}"
+endpoint_add_tcp "{{ fivem_port }}"
+endpoint_add_upd "{{ fivem_port }}"
+endpoint_add_tcp "{{ txadmin_port }}"
 sv_maxclients {{ fivem_max_clients }}
 set steam_webApiKey "{{ fivem_admin_principal_lead_id_steam }}"
 sets tags "{{ fivem_server_tags }}"
