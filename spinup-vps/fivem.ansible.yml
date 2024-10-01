@@ -152,6 +152,12 @@
         state: present
         sysctl_set: true
 
+    - name: Save iptables rules
+      become: true
+      ansible.builtin.command: sudo netfilter-persistent save
+      register: iptables_saved
+      changed_when: false
+
     # TODO: Get these working
     - name: Allow txAdmin and RCON access for admin group
       become: true
@@ -255,12 +261,6 @@
         name: "fivem-db-{{ environment_name }}.service"
         enabled: true
         state: started
-
-    - name: Save iptables rules
-      become: true
-      ansible.builtin.command: sudo netfilter-persistent save
-      register: iptables_saved
-      changed_when: false
 
     # - name: Save iptables rules
     #   become: true
