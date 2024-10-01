@@ -392,20 +392,24 @@
     - name: Reload systemd
       ansible.builtin.systemd:
         daemon_reload: true
+      become: true
 
     - name: Enable fxserver service
       ansible.builtin.systemd:
         name: "fxserver-{{ environment_name }}.service"
         enabled: true
         state: started
+      become: true
 
     - name: Enable docker-compose-db service
       ansible.builtin.systemd:
         name: "fivem-db-{{ environment_name }}.service"
         enabled: true
         state: started
+      become: true
 
     - name: Save iptables rules
       ansible.builtin.command: iptables-save > /etc/iptables/rules.v4
       register: iptables_saved
       changed_when: false
+      become: true

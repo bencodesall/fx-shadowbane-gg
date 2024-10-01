@@ -3,7 +3,7 @@ version: '3'
 services:
   mariadb:
     image: mariadb:latest
-    constainer_name: {{ mariadb_service_name }}
+    container_name: {{ mariadb_service_name }}
     environment:
       MYSQL_ROOT_PASSWORD: {{ mariadb_root_password }}
       MYSQL_DATABASE: {{ mariadb_name }}
