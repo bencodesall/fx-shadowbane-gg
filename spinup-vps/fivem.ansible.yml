@@ -74,7 +74,6 @@
       when: inventory_hostname == 'prod_host'
 
     - name: Add the current user to the Docker and FiveM Admins groups
-      become: true
       ansible.builtin.user:
         name: ansible_user
         groups: docker, fivem

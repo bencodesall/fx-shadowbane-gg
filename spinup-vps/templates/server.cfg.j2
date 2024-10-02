@@ -2,6 +2,14 @@
 endpoint_add_tcp "0.0.0.0:{{ fivem_port }}"
 endpoint_add_udp "0.0.0.0:{{ fivem_port }}"
 
+# txAdmin settings
+set txAdminEnabled true
+set txAdminInterface "0.0.0.0"
+set txAdminPort {{ txadmin_port }}
+
+# Set log directory
+set logfile "{{ service_dir_fxserver }}/server/logs/fivem-server.log"
+
 # These resources will start by default.
 ensure mapmanager
 ensure chat
