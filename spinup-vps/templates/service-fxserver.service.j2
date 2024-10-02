@@ -4,20 +4,23 @@ After=network.target
 # OnFailure=your-notification-service.target
 
 [Service]
-Type=simple
+Type=forking
 User=fivem
-Group=fivem_admins
+Group=fivem
 WorkingDirectory={{ service_dir_fxserver }}/server-data
-ExecStart={{ service_dir_fxserver }}/server/run.sh +exec {{ service_dir_fxserver }}/server-data/server.cfg
-Restart=on-failure
+ExecStart=/usr/bin/screen -dmS {{ fx_service_name }} {{ service_dir_fxserver }}/server/run.sh +exec {{ service_dir_fxserver }}/server-data/server.cfg
+ExecStop=/usr/bin/screen -S {{ fx_service_name }} -X quit
+Restart=awlays
 RestartSec=10
 StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=fivem_{{ environment_name }}
 
 # Limit restarts
-StartLimitIntervalSec=600 # 10 minute window
-StartLimitBurst=3 # limit to 3 restarts in 10 minutes
+# 10 minute window
+StartLimitIntervalSec=600
+# limit to 3 restarts in 10 minutes
+StartLimitBurst=3
 
 [Install]
 WantedBy=multi-user.target

@@ -33,6 +33,7 @@
           - zlib1g
           - build-essential
           - docker-compose
+          - neovim
         state: present
         update_cache: true
       when: inventory_hostname == 'prod_host'
@@ -70,6 +71,7 @@
         shell: /bin/bash
         system: true
         create_home: true
+      when: inventory_hostname == 'prod_host'
 
     - name: Add the current user to the Docker and FiveM Admins groups
       become: true
@@ -117,8 +119,8 @@
         owner: fivem
 
     - name: Setup systemd service for docker-compose database
+      become: true
       ansible.builtin.template:
-        become: true
         src: templates/service-mariadb.service.j2
         dest: "/etc/systemd/system/fivem-db-{{ environment_name }}.service"
         mode: "0600"
@@ -151,12 +153,6 @@
         value: 1
         state: present
         sysctl_set: true
-
-    - name: Save iptables rules
-      become: true
-      ansible.builtin.command: sudo netfilter-persistent save
-      register: iptables_saved
-      changed_when: false
 
     # TODO: Get these working
     - name: Allow txAdmin and RCON access for admin group
@@ -243,6 +239,13 @@
         mode: "0775"
 
   handlers:
+
+    - name: Save iptables rules
+      become: true
+      ansible.builtin.command: sudo netfilter-persistent save
+      register: iptables_saved
+      changed_when: false
+
     - name: Reload systemd
       become: true
       ansible.builtin.systemd:
