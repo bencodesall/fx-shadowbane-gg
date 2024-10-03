@@ -6,11 +6,11 @@ After=network.target
 [Service]
 #Type=simple
 Type=forking
-User=fivem
+User=debian
 Group=fivem
 WorkingDirectory={{ service_dir_fxserver }}/server-data
-ExecStart=/usr/bin/screen -S {{ fx_service_name }} {{ service_dir_fxserver }}/server/run.sh
-ExecStop=/usr/bin/screen -S {{ fx_service_name }} -X quit
+ExecStart=sudo /usr/bin/screen -S {{ fx_service_name }} {{ service_dir_fxserver }}/server/run.sh
+ExecStop=sudo /usr/bin/screen -S {{ fx_service_name }} -X quit
 Restart=always
 RestartSec=10
 StandardOutput=journal
