@@ -6,7 +6,7 @@
     - vars/main.yml
   vars:
     - fx_service_name: "fxserver-{{ environment_name }}"
-    - mariadb_service_name: "mariadb-{{ environment_name }}"
+    - mariadb_service_name: "fivem-db-{{ environment_name }}"
     - service_dir_fxserver: "{{ fivem_user_dir }}/{{ environment_name }}"
     - service_dir_mariadb: "/var/fivem/{{ environment_name }}"
 
