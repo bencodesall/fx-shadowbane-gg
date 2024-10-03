@@ -1,6 +1,15 @@
 [Unit]
 Description={{ fx_service_name }} Server
-After=network.target
+After=network.target {{ mariadb_service_name }}.service
+Requires={{ mariadb_service_name }}.service
+
+## Limit restarts
+## 10 minute window
+StartLimitIntervalSec=600
+## limit to 3 restarts in 10 minutes
+StartLimitBurst=3
+
+## System Notification Service
 # OnFailure=your-notification-service.target
 
 [Service]
@@ -16,12 +25,6 @@ RestartSec=10
 StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=fivem_{{ environment_name }}
-
-# Limit restarts
-# 10 minute window
-StartLimitIntervalSec=600
-# limit to 3 restarts in 10 minutes
-StartLimitBurst=3
 
 [Install]
 WantedBy=multi-user.target
