@@ -1,0 +1,42 @@
+#!/bin/bash
+# Backup directories
+BACKUP_DIR="{{ backups_dir }}"
+SERVER_DIR="/home/fivem/{{ environment_name }}/"
+TXADMIN_DIR="/home/fivem/{{ environment_name }}/server/txData"
+DB_NAME="{{ mariadb_name }}"
+DB_USER="root"
+DB_PASS="{{ mariadb_root_password }}"
+DB_CONTAINER_NAME="fivem-db-{{ environment_name }}"
+SERVICE_NAME="fxserver-{{ environment_name }}"
+
+# Create backup filename with timestamp
+TIMESTAMP=$(date +"%F_%H-%M-%S")
+BACKUP_FILE="$BACKUP_DIR/fivem_backup-$SERVICE_NAME-$TIMESTAMP.tar.gz"
+DB_BACKUP_FILE="$BACKUP_DIR/fivem_backup-$SERVICE_NAME-$TIMESTAMP.sql"
+
+# Stop the server using systemctl
+echo "Stopping FiveM server..."
+sudo systemctl stop $SERVICE_NAME
+
+# Wait for the service to fully stop
+echo "Waiting for FiveM server to stop..."
+while systemctl is-active --quiet $SERVICE_NAME; do
+    echo "Server is still running, waiting for 2 seconds..."
+    sleep 2
+done
+
+echo "FiveM server stopped successfully."
+
+# Backup files
+echo "Backing up server files..."
+sudo tar -czvf $BACKUP_FILE $SERVER_DIR $TXADMIN_DIR
+
+# Backup Docker-based MySQL database
+echo "Backing up database..."
+docker exec $DB_CONTAINER_NAME mysqldump -u $DB_USER -p$DB_PASS $DB_NAME > $DB_BACKUP_FILE
+
+# Start the server again using systemctl
+echo "Starting FiveM server..."
+sudo systemctl start $SERVICE_NAME
+
+echo "Backup complete: $BACKUP_FILE and $DB_BACKUP_FILE"

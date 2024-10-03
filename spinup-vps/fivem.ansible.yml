@@ -81,6 +81,14 @@
         append: true
       when: inventory_hostname == 'prod_host'
 
+    - name: Create the fivem backups directory
+      ansible.builtin.file:
+        path: "{{ ansible_user_dir }}/fivem_backups"
+        state: directory
+        mode: "0775"
+        owner: "{{ ansible_user }}"
+      when: inventory_hostname == 'prod_host'
+
   tasks:
     - name: Ensure required directories are present
       become: true
@@ -96,6 +104,12 @@
         - "{{ service_dir_fxserver }}/server"
         - "{{ service_dir_mariadb }}"
         - "{{ service_dir_mariadb }}/mariadb_data"
+
+    - name: Create backup and restore scripts
+      become: true
+      ansible.builtin.template:
+        src: template/fivem_backup.sh.j2
+        dest: "{{ backup_dir }}/fivem_backup_{{ environment_name }}.sh"
 
     - name: Setup systemd service for fxserver
       become: true

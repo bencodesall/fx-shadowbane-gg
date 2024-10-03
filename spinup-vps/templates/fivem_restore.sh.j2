@@ -1,0 +1,65 @@
+#!/bin/bash
+# Variables
+BACKUP_DIR="{{ backups_dir }}"
+SERVER_DIR="/home/fivem/{{ environment_name }}/"
+TXADMIN_DIR="/home/fivem/{{ environment_name }}/server/txData"
+DB_NAME="{{ mariadb_name }}"
+DB_USER="root"
+DB_PASS="{{ mariadb_root_password }}"
+DB_CONTAINER_NAME="fivem-db-{{ environment_name }}"
+SERVICE_NAME="fxserver-{{ environment_name }}"
+
+# Check if a filename is provided
+if [ -z "$1" ]; then
+    echo "Error: No filename provided."
+    echo "Usage: $0 <fivem_backup-SERVICE_NAME-TIMESTAMP[.sql,.tar.gz]>"
+    exit 1
+fi
+
+# Strip off the .tar.gz or .sql from the input
+BASE_NAME=$(basename "$1" .tar.gz)  # This will remove '.tar.gz' if it exists
+BASE_NAME=$(basename "$BASE_NAME" .sql)  # This will remove '.sql' if it exists
+
+# Define the full paths to the backup files based on the base name
+BACKUP_FILE="$BACKUP_DIR/${BASE_NAME}.tar.gz"
+DB_BACKUP_FILE="$BACKUP_DIR/${BASE_NAME}.sql"
+
+# Check if the backup files exist
+if [ ! -f "$BACKUP_FILE" ]; then
+    echo "Error: Server backup file $BACKUP_FILE does not exist."
+    exit 1
+fi
+
+if [ ! -f "$DB_BACKUP_FILE" ]; then
+    echo "Error: Database backup file $DB_BACKUP_FILE does not exist."
+    exit 1
+fi
+
+
+
+# Stop the server using systemctl
+echo "Stopping FiveM server..."
+sudo systemctl stop $SERVICE_NAME
+
+# Wait for the service to fully stop
+echo "Waiting for FiveM server to stop..."
+while systemctl is-active --quiet $SERVICE_NAME; do
+    echo "Server is still running, waiting for 2 seconds..."
+    sleep 2
+done
+
+echo "FiveM server stopped successfully."
+
+# Restore server files
+echo "Restoring server files from $BACKUP_FILE..."
+sudo tar -xzvf $BACKUP_FILE -C /  # Extract backup to root directories
+
+# Restore MySQL database
+echo "Restoring database from $DB_BACKUP_FILE..."
+docker exec -i $DB_CONTAINER_NAME mysql -u $DB_USER -p$DB_PASS $DB_NAME < $DB_BACKUP_FILE
+
+# Start the server again using systemctl
+echo "Starting FiveM server..."
+sudo systemctl start $SERVICE_NAME
+
+echo "Restore complete!"
