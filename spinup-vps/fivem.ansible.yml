@@ -67,8 +67,9 @@
         groups:
           - fivem
           - docker
-        home: /srv/fivem
+        home: /home/fivem
         shell: /bin/bash
+        password: "{{ fivem_user_password }}"
         system: true
         create_home: true
       when: inventory_hostname == 'prod_host'

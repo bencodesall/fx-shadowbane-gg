@@ -4,8 +4,8 @@ After=network.target
 # OnFailure=your-notification-service.target
 
 [Service]
-#Type=forking
-Type=simple
+#Type=simple
+Type=forking
 User=fivem
 Group=fivem
 WorkingDirectory={{ service_dir_fxserver }}/server-data
