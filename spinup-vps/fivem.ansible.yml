@@ -7,7 +7,7 @@
   vars:
     - fx_service_name: "fxserver-{{ environment_name }}"
     - mariadb_service_name: "mariadb-{{ environment_name }}"
-    - service_dir_fxserver: "/srv/fivem/{{ environment_name }}"
+    - service_dir_fxserver: "{{ fivem_user_dir }}/{{ environment_name }}"
     - service_dir_mariadb: "/var/fivem/{{ environment_name }}"
 
   pre_tasks:
@@ -70,7 +70,7 @@
         home: /home/fivem
         shell: /bin/bash
         password: "{{ fivem_user_password }}"
-        system: true
+        # system: true
         create_home: true
       when: inventory_hostname == 'prod_host'
 
