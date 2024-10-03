@@ -76,7 +76,7 @@
 
     - name: Add the current user to the Docker and FiveM Admins groups
       ansible.builtin.user:
-        name: ansible_user
+        name: "{{ ansible_user_id }}"
         groups: docker, fivem
         append: true
       when: inventory_hostname == 'prod_host'
@@ -86,7 +86,7 @@
         path: "{{ ansible_user_dir }}/fivem_backups"
         state: directory
         mode: "0775"
-        owner: "{{ ansible_user }}"
+        owner: "{{ ansible_user_id }}"
       when: inventory_hostname == 'prod_host'
 
   tasks:
@@ -109,7 +109,7 @@
       become: true
       ansible.builtin.template:
         src: template/fivem_backup.sh.j2
-        dest: "{{ backup_dir }}/fivem_backup_{{ environment_name }}.sh"
+        dest: "{{ backups_dir }}/fivem_backup_{{ environment_name }}.sh"
 
     - name: Setup systemd service for fxserver
       become: true
