@@ -8,6 +8,7 @@ DB_USER="root"
 DB_PASS="{{ mariadb_root_password }}"
 DB_CONTAINER_NAME="fivem-db-{{ environment_name }}"
 SERVICE_NAME="fxserver-{{ environment_name }}"
+ADMIN_USER="{{ admin_user }}"
 
 # Create backup filename with timestamp
 TIMESTAMP=$(date +"%F_%H-%M-%S")
@@ -30,6 +31,7 @@ echo "FiveM server stopped successfully."
 # Backup files
 echo "Backing up server files..."
 sudo tar -czvf $BACKUP_FILE $SERVER_DIR $TXADMIN_DIR
+sudo chown $ADMIN_USER:$ADMIN_USER $BACKUP_FILE
 
 # Backup Docker-based MySQL database
 echo "Backing up database..."
