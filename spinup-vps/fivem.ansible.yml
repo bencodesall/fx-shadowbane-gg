@@ -4,6 +4,7 @@
   vars_files:
     - vars/main.yml
   vars:
+    - archive_path: /tmp/fx.tar.xz
     - fx_service_name: "fxserver-{{ environment_name }}"
     - mariadb_service_name: "fivem-db-{{ environment_name }}"
     - service_dir_fxserver: "{{ fivem_user_dir }}/{{ environment_name }}"
@@ -74,30 +75,42 @@
       when: inventory_hostname == 'prod_host'
 
     - name: Add the current user to the Docker and FiveM Admins groups
+      become: true
       ansible.builtin.user:
-        name: "{{ ansible_user_id }}"
+        name: "{{ admin_user }}"
         groups: docker, fivem
         append: true
       when: inventory_hostname == 'prod_host'
 
     - name: Create the fivem backups directory
       ansible.builtin.file:
-        path: "{{ ansible_user_dir }}/fivem_backups"
+        path: "/home/{{ admin_user }}/fivem_backups"
         state: directory
         mode: "0775"
-        owner: "{{ ansible_user_id }}"
+        owner: "{{ admin_user }}"
 
+  tasks:
     - name: Download server binaries
       become: true
       ansible.builtin.get_url:
         url: "{{ fx_source_download_url }}"
-        dest: /home/debian/fx.tar.xz
-        mode: "0777"
+        dest: "{{ archive_path }}"
+        mode: "0644"
       retries: 3
       delay: 5
-      when: inventory_hostname == 'prod_host'
+      delegate_to: localhost
+      run_once: true
+      register: tarball_download
 
-  tasks:
+    - name: Ensure the server binaries are dowloaded
+      ansible.builtin.file:
+        path: "{{ archive_path }}"
+        state: file
+      notify:
+        - Copy server archive files
+        - Extract server archive files
+        - Delete server archive files
+
     - name: Ensure required directories are present
       become: true
       ansible.builtin.file:
@@ -197,17 +210,8 @@
         regexp: "^%fivem"
         line: "%fivem ALL=(ALL) NOPASSWD: /usr/bin/mysql, /usr/bin/curl, /usr/local/bin/fxadmin-cli"
 
-
-    - name: Extract FXServer tar file
-      become: true
-      ansible.builtin.unarchive:
-        src: /home/debian/fx.tar.xz
-        dest: "{{ service_dir_fxserver }}/server"
-        remote_src: true
-        group: fivem
-        owner: fivem
-
     - name: Add GitHub to known_hosts
+      become: true
       ansible.builtin.known_hosts:
         name: github.com
         key: "{{ lookup('pipe', 'ssh-keyscan -t rsa github.com') }}"
@@ -222,12 +226,22 @@
       changed_when: false
 
     - name: Clone the server-data
+      become: true
       ansible.builtin.git:
         repo: https://github.com/citizenfx/cfx-server-data.git
         # version: 8-digit hash
         dest: "{{ service_dir_fxserver }}/server-data"
       retries: 3
       delay: 5
+
+    - name: Set ownership to fivem:fivem for the server-data directory
+      become: true
+      ansible.builtin.file:
+        path: "{{ service_dir_fxserver }}/server-data"
+        state: directory
+        recurse: true
+        owner: fivem
+        group: fivem
 
     - name: Generate server.cfg template file
       become: true
@@ -258,6 +272,27 @@
         mode: "0775"
 
   handlers:
+
+    - name: Copy server archive files
+      ansible.builtin.copy:
+        src: "{{ archive_path }}"
+        dest: "{{ archive_path }}"
+        mode: '0644'
+
+    - name: Extract FXServer tar file
+      become: true
+      ansible.builtin.unarchive:
+        src: "{{ archive_path }}"
+        dest: "{{ service_dir_fxserver }}/server"
+        remote_src: true
+        group: fivem
+        owner: fivem
+        # extra_opts: [ "--strip-components=1" ]
+
+    - name: Delete server archive files
+      ansible.builtin.file:
+        path: "{{ archive_path }}"
+        state: absent
 
     - name: Save iptables rules
       become: true
