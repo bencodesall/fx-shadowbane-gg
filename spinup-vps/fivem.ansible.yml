@@ -108,7 +108,7 @@
     - name: Create backup and restore scripts
       become: true
       ansible.builtin.template:
-        src: template/fivem_backup.sh.j2
+        src: templates/fivem_backup.sh.j2
         dest: "{{ backups_dir }}/fivem_backup_{{ environment_name }}.sh"
 
     - name: Setup systemd service for fxserver
