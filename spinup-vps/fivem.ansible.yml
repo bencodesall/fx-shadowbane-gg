@@ -1,7 +1,6 @@
 ---
 - name: Prepare VPS for FiveM
   hosts: all_servers
-  become: true
   vars_files:
     - vars/main.yml
   vars:
@@ -87,6 +86,15 @@
         state: directory
         mode: "0775"
         owner: "{{ ansible_user_id }}"
+
+    - name: Download server binaries
+      become: true
+      ansible.builtin.get_url:
+        url: "{{ fx_source_download_url }}"
+        dest: /home/debian/fx.tar.xz
+        mode: "0777"
+      retries: 3
+      delay: 5
       when: inventory_hostname == 'prod_host'
 
   tasks:
@@ -105,11 +113,23 @@
         - "{{ service_dir_mariadb }}"
         - "{{ service_dir_mariadb }}/mariadb_data"
 
-    - name: Create backup and restore scripts
+    - name: Create backup scripts
       become: true
       ansible.builtin.template:
         src: templates/fivem_backup.sh.j2
         dest: "{{ backups_dir }}/fivem_backup_{{ environment_name }}.sh"
+        mode: "0755"
+        owner: debian
+        group: fivem
+
+    - name: Create restore scripts
+      become: true
+      ansible.builtin.template:
+        src: templates/fivem_restore.sh.j2
+        dest: "{{ backups_dir }}/fivem_restore_{{ environment_name }}.sh"
+        mode: "0755"
+        owner: debian
+        group: fivem
 
     - name: Setup systemd service for fxserver
       become: true
@@ -177,30 +197,15 @@
         regexp: "^%fivem"
         line: "%fivem ALL=(ALL) NOPASSWD: /usr/bin/mysql, /usr/bin/curl, /usr/local/bin/fxadmin-cli"
 
-    - name: Download server binaries
-      become: true
-      ansible.builtin.get_url:
-        url: "{{ fx_source_download_url }}"
-        dest: /tmp/fx.tar.xz
-        mode: "0644"
-      retries: 3
-      delay: 5
-      when: inventory_hostname == 'prod_host'
 
     - name: Extract FXServer tar file
       become: true
       ansible.builtin.unarchive:
-        src: /tmp/fx.tar.xz
+        src: /home/debian/fx.tar.xz
         dest: "{{ service_dir_fxserver }}/server"
         remote_src: true
-        owner: fivem
         group: fivem
-
-    - name: Remove the downloaded tar file
-      become: true
-      ansible.builtin.file:
-        path: /tmp/fx.tar.xz
-        state: absent
+        owner: fivem
 
     - name: Add GitHub to known_hosts
       ansible.builtin.known_hosts:
