@@ -4,7 +4,7 @@
   vars_files:
     - vars/main.yml
   vars:
-    - archive_path: /tmp/fx.tar.xz
+    - archive_path: "/tmp/fx.tar.xz"
     - fx_service_name: "fxserver-{{ environment_name }}"
     - mariadb_service_name: "fivem-db-{{ environment_name }}"
     - service_dir_fxserver: "{{ fivem_user_dir }}/{{ environment_name }}"
@@ -32,18 +32,12 @@
           - libssl-dev
           - zlib1g
           - build-essential
+          - docker.io
           - docker-compose
           - neovim
         state: present
         update_cache: true
-      when: inventory_hostname == 'prod_host'
-
-    - name: Install Docker.io
-      become: true
-      ansible.builtin.apt:
-        name: docker.io
-        state: present
-      when: inventory_hostname == 'prod_host'
+      when: environment_name == 'production'
 
     - name: Enable Docker service
       become: true
@@ -51,14 +45,14 @@
         name: docker
         enabled: true
         state: started
-      when: inventory_hostname == 'prod_host'
+      when: environment_name == 'production'
 
     - name: Create fivem group
       become: true
       ansible.builtin.group:
         name: fivem
         state: present
-      when: inventory_hostname == 'prod_host'
+      when: environment_name == 'production'
 
     - name: Create fivem user
       become: true
@@ -72,7 +66,7 @@
         password: "{{ fivem_user_password }}"
         # system: true
         create_home: true
-      when: inventory_hostname == 'prod_host'
+      when: environment_name == 'production'
 
     - name: Add the current user to the Docker and FiveM Admins groups
       become: true
@@ -80,7 +74,7 @@
         name: "{{ admin_user }}"
         groups: docker, fivem
         append: true
-      when: inventory_hostname == 'prod_host'
+      when: environment_name == 'production'
 
     - name: Create the fivem backups directory
       ansible.builtin.file:
@@ -149,7 +143,7 @@
       ansible.builtin.template:
         src: templates/service-fxserver.service.j2
         dest: "/etc/systemd/system/fxserver-{{ environment_name }}.service"
-        mode: "0600"
+        mode: "0644"
         group: fivem
         owner: fivem
       notify:
@@ -204,11 +198,19 @@
     # TODO: Get these working
     - name: Allow txAdmin and RCON access for admin group
       become: true
-      ansible.builtin.lineinfile:
-        path: "/etc/sudoers"
-        state: present
-        regexp: "^%fivem"
-        line: "%fivem ALL=(ALL) NOPASSWD: /usr/bin/mysql, /usr/bin/curl, /usr/local/bin/fxadmin-cli"
+      ansible.builtin.sudoers:
+        name: fivem
+        users: "%fivem"
+        commands: "/usr/bin/mysql, /usr/bin/curl, /usr/local/bin/fxadmin-cli"
+        nopasswd: true
+
+    # - name: Allow txAdmin and RCON access for admin group
+    #   become: true
+    #   ansible.builtin.lineinfile:
+    #     path: "/etc/sudoers"
+    #     state: present
+    #     regexp: "^%fivem"
+    #     line: "%fivem ALL=(ALL) NOPASSWD: /usr/bin/mysql, /usr/bin/curl, /usr/local/bin/fxadmin-cli"
 
     - name: Add GitHub to known_hosts
       become: true
@@ -253,15 +255,6 @@
         group: fivem
         mode: "0775"
 
-    - name: Generate docker-compose for MariaDB service
-      become: true
-      ansible.builtin.template:
-        src: docker-compose-mariadb.yml.j2
-        dest: "{{ service_dir_mariadb }}/docker-compose.yml"
-        owner: fivem
-        group: fivem
-        mode: "0775"
-
     - name: Generate systemd for databases
       become: true
       ansible.builtin.template:
@@ -269,20 +262,23 @@
         dest: /etc/systemd/system/fivem-db-{{ environment_name }}.service
         owner: fivem
         group: fivem
-        mode: "0775"
+        mode: "0644"
 
   handlers:
 
     - name: Copy server archive files
+      become: true
       ansible.builtin.copy:
         src: "{{ archive_path }}"
-        dest: "{{ archive_path }}"
+        dest: "{{ service_dir_fxserver }}"
         mode: '0644'
+        group: fivem
+        owner: fivem
 
     - name: Extract FXServer tar file
       become: true
       ansible.builtin.unarchive:
-        src: "{{ archive_path }}"
+        src: "{{ service_dir_fxserver }}"
         dest: "{{ service_dir_fxserver }}/server"
         remote_src: true
         group: fivem
