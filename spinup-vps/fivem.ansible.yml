@@ -96,6 +96,14 @@
       run_once: true
       register: tarball_download
 
+    - name: Change ownership of the downloaded archive
+      become: true
+      ansible.builtin.file:
+        path: "{{ archive_path }}"
+        owner: fivem
+        group: fivem
+
+
     - name: Ensure the server binaries are dowloaded
       ansible.builtin.file:
         path: "{{ archive_path }}"
@@ -281,12 +289,12 @@
     - name: Extract FXServer tar file
       become: true
       ansible.builtin.unarchive:
-        src: "{{ service_dir_fxserver }}"
+        src: "{{ service_dir_fxserver }}/fx.tar.xz"
         dest: "{{ service_dir_fxserver }}/server"
         remote_src: true
         group: fivem
         owner: fivem
-        # extra_opts: [ "--strip-components=1" ]
+        extra_opts: [ "--strip-components=1" ]
 
     - name: Delete server archive files
       ansible.builtin.file:
