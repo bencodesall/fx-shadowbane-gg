@@ -200,12 +200,12 @@
       become: true
       community.general.sudoers:
         name: fivem
-        users: "%fivem"
+        user: "%fivem"
         commands: 
           - /usr/bin/mysql
           - /usr/bin/curl
           - "/home/fivem/{{ environment_name }}/server/run.sh"
-        nopasswd: true
+        nopassword: true
 
     # - name: Allow txAdmin and RCON access for admin group
     #   become: true
