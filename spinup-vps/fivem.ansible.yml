@@ -103,7 +103,6 @@
         owner: fivem
         group: fivem
 
-
     - name: Ensure the server binaries are dowloaded
       ansible.builtin.file:
         path: "{{ archive_path }}"
@@ -277,19 +276,19 @@
 
   handlers:
 
-    - name: Copy server archive files
-      become: true
-      ansible.builtin.copy:
-        src: "{{ archive_path }}"
-        dest: "{{ service_dir_fxserver }}"
-        mode: '0644'
-        group: fivem
-        owner: fivem
+    # - name: Copy server archive files
+    #   become: true
+    #   ansible.builtin.copy:
+    #     src: "{{ archive_path }}"
+    #     dest: "{{ service_dir_fxserver }}"
+    #     mode: '0644'
+    #     group: fivem
+    #     owner: fivem
 
     - name: Extract FXServer tar file
       become: true
       ansible.builtin.unarchive:
-        src: "{{ service_dir_fxserver }}/fx.tar.xz"
+        src: "{{ archive_path }}/fx.tar.xz"
         dest: "{{ service_dir_fxserver }}/server"
         remote_src: true
         group: fivem
