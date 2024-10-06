@@ -109,7 +109,7 @@
         state: file
       notify:
         - Copy server archive files
-        - Extract server archive files
+        - Extract FXServer tar file
         - Delete server archive files
 
     - name: Ensure required directories are present
@@ -294,6 +294,15 @@
         group: fivem
         owner: fivem
         extra_opts: [ "--strip-components=1" ]
+
+    # - name: Extract FXServer tar file
+    #   become: true
+    #   ansible.builtin.command:
+    #     cmd: "tar -xf /tmp/fx.tar.xz -C /home/fivem/production/server"
+    #   register: unarchive_output
+
+    # - debug:
+    #     var: unarchive_output
 
     - name: Delete server archive files
       ansible.builtin.file:
