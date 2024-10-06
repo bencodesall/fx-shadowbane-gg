@@ -198,10 +198,13 @@
     # TODO: Get these working
     - name: Allow txAdmin and RCON access for admin group
       become: true
-      ansible.builtin.sudoers:
+      community.general.sudoers:
         name: fivem
         users: "%fivem"
-        commands: "/usr/bin/mysql, /usr/bin/curl, /usr/local/bin/fxadmin-cli"
+        commands: 
+          - /usr/bin/mysql
+          - /usr/bin/curl
+          - "/home/fivem/{{ environment_name }}/server/run.sh"
         nopasswd: true
 
     # - name: Allow txAdmin and RCON access for admin group
