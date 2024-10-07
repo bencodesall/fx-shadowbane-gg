@@ -101,16 +101,6 @@
         path: "{{ archive_path }}"
         state: file
 
-    - name: Extract FXServer tar file
-      become: true
-      ansible.builtin.command:
-        cmd: "sudo tar -xf {{ archive_path }} -C {{ service_dir_fxserver }}/server"
-
-    - name: Ensure owner and group for fxserver
-      become: true
-      ansible.builtin.command:
-        cmd: "sudo chown -R fivem:fivem {{ service_dir_fxserver }}"
-
     - name: Ensure required directories are present
       become: true
       ansible.builtin.file:
@@ -125,6 +115,16 @@
         - "{{ service_dir_fxserver }}/server"
         - "{{ service_dir_mariadb }}"
         - "{{ service_dir_mariadb }}/mariadb_data"
+
+    - name: Extract FXServer tar file
+      become: true
+      ansible.builtin.command:
+        cmd: "sudo tar -xf {{ archive_path }} -C {{ service_dir_fxserver }}/server"
+
+    - name: Ensure owner and group for fxserver
+      become: true
+      ansible.builtin.command:
+        cmd: "sudo chown -R fivem:fivem {{ service_dir_fxserver }}"
 
     - name: Create backup scripts
       become: true
