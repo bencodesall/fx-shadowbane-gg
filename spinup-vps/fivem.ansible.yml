@@ -162,7 +162,7 @@
         group: fivem
         owner: fivem
       notify:
-        - Reload systemd
+        # - Reload systemd
         - Enable docker-compose-db service
 
     - name: Setup systemd service for fxserver
@@ -174,7 +174,7 @@
         group: fivem
         owner: fivem
       notify:
-        - Reload systemd
+        # - Reload systemd
         - Enable fxserver service
 
     - name: Ensure iptables rules are applied
@@ -192,6 +192,7 @@
         - { protocol: tcp, port: "{{ mariadb_port }}" }
       notify:
         - Save iptables rules
+        - Reload systemd
 
     - name: Enable IP forwarding and NAT rules (required for public availability)
       become: true
@@ -288,19 +289,19 @@
       ansible.builtin.systemd:
         daemon_reload: true
 
-    - name: Enable fxserver service
-      become: true
-      become_user: fivem
-      ansible.builtin.systemd:
-        name: "fxserver-{{ environment_name }}.service"
-        enabled: true
-        state: started
-
     - name: Enable docker-compose-db service
       become: true
       become_user: fivem
       ansible.builtin.systemd:
         name: "fivem-db-{{ environment_name }}.service"
+        enabled: true
+        state: started
+
+    - name: Enable fxserver service
+      become: true
+      become_user: fivem
+      ansible.builtin.systemd:
+        name: "fxserver-{{ environment_name }}.service"
         enabled: true
         state: started
 
