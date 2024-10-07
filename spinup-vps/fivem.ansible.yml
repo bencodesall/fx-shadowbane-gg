@@ -144,18 +144,6 @@
         owner: debian
         group: fivem
 
-    - name: Setup systemd service for fxserver
-      become: true
-      ansible.builtin.template:
-        src: templates/service-fxserver.service.j2
-        dest: "/etc/systemd/system/fxserver-{{ environment_name }}.service"
-        mode: "0644"
-        group: fivem
-        owner: fivem
-      notify:
-        - Reload systemd
-        - Enable fxserver service
-
     - name: Setup docker-compose file for txAdmin database
       become: true
       ansible.builtin.template:
@@ -177,6 +165,18 @@
         - Reload systemd
         - Enable docker-compose-db service
 
+    - name: Setup systemd service for fxserver
+      become: true
+      ansible.builtin.template:
+        src: templates/service-fxserver.service.j2
+        dest: "/etc/systemd/system/fxserver-{{ environment_name }}.service"
+        mode: "0644"
+        group: fivem
+        owner: fivem
+      notify:
+        - Reload systemd
+        - Enable fxserver service
+        
     - name: Ensure iptables rules are applied
       become: true
       ansible.builtin.iptables:
@@ -276,8 +276,6 @@
         mode: "0644"
 
   handlers:
-
-
 
     - name: Save iptables rules
       become: true
