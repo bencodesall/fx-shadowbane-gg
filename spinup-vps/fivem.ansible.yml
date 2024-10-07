@@ -159,8 +159,8 @@
         src: templates/service-mariadb.service.j2
         dest: "/etc/systemd/system/fivem-db-{{ environment_name }}.service"
         mode: "0600"
-        group: fivem
-        owner: fivem
+        # group: fivem
+        # owner: fivem
       notify:
         # - Reload systemd
         - Enable docker-compose-db service
@@ -171,8 +171,8 @@
         src: templates/service-fxserver.service.j2
         dest: "/etc/systemd/system/fxserver-{{ environment_name }}.service"
         mode: "0644"
-        group: fivem
-        owner: fivem
+        # group: fivem
+        # owner: fivem
       notify:
         # - Reload systemd
         - Enable fxserver service
