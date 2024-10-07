@@ -291,7 +291,6 @@
 
     - name: Enable docker-compose-db service
       become: true
-      become_user: fivem
       ansible.builtin.systemd:
         name: "fivem-db-{{ environment_name }}.service"
         enabled: true
@@ -299,7 +298,6 @@
 
     - name: Enable fxserver service
       become: true
-      become_user: fivem
       ansible.builtin.systemd:
         name: "fxserver-{{ environment_name }}.service"
         enabled: true
