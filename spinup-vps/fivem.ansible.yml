@@ -84,6 +84,7 @@
         state: directory
         mode: "0775"
         owner: "{{ fivem_user }}"
+        group: "{{ fivem_user }}"
 
   tasks:
     - name: Download server binaries
