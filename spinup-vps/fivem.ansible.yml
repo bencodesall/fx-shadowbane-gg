@@ -213,7 +213,7 @@
           - "/home/fivem/{{ environment_name }}/server/run.sh"
           - "/usr/bin/systemctl"
           - "/usr/bin/screen"
-          - "/usr/bin/docker-compose"q
+          - "/usr/bin/docker-compose"
         nopassword: true
 
     # # TODO: Get these working
