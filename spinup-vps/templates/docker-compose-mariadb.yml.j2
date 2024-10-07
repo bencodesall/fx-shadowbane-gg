@@ -13,6 +13,8 @@ services:
       - "{{ mariadb_port }}:3306"
     volumes:
       - {{ service_dir_mariadb }}/mariadb_data:/var/lib/mysql
+    user: "1001:1001" # TODO: confirm this
+
     networks:
       - {{ fivem_docker_network }}
     restart: always

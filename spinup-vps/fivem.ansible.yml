@@ -202,7 +202,6 @@
         state: present
         sysctl_set: true
 
-    # TODO: Get these working
     - name: Allow txAdmin and RCON access for admin group
       become: true
       community.general.sudoers:
@@ -214,7 +213,22 @@
           - "/home/fivem/{{ environment_name }}/server/run.sh"
           - "/usr/bin/systemctl"
           - "/usr/bin/screen"
+          - "/usr/bin/docker-compose"q
         nopassword: true
+
+    # # TODO: Get these working
+    # - name: Allow txAdmin and RCON access for admin group
+    #   become: true
+    #   community.general.sudoers:
+    #     name: fivem
+    #     user: "%fivem"
+    #     commands: 
+    #       - /usr/bin/mysql
+    #       - /usr/bin/curl
+    #       - "/home/fivem/{{ environment_name }}/server/run.sh"
+    #       - "/usr/bin/systemctl"
+    #       - "/usr/bin/screen"
+    #     nopassword: true
 
     # - name: Allow txAdmin and RCON access for admin group
     #   become: true
