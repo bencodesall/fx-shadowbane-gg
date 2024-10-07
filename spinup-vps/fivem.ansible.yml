@@ -156,11 +156,11 @@
     - name: Setup systemd service for docker-compose database
       become: true
       ansible.builtin.template:
-        src: templates/service-mariadb.service.j2
-        dest: "/etc/systemd/system/fivem-db-{{ environment_name }}.service"
-        mode: "0600"
-        # group: fivem
-        # owner: fivem
+        src: service-mariadb.service.j2
+        dest: /etc/systemd/system/fivem-db-{{ environment_name }}.service
+        owner: fivem
+        group: fivem
+        mode: "0644"
       notify:
         # - Reload systemd
         - Enable docker-compose-db service
@@ -282,14 +282,7 @@
         group: fivem
         mode: "0775"
 
-    - name: Generate systemd for databases
-      become: true
-      ansible.builtin.template:
-        src: service-mariadb.service.j2
-        dest: /etc/systemd/system/fivem-db-{{ environment_name }}.service
-        owner: fivem
-        group: fivem
-        mode: "0644"
+
 
   handlers:
 

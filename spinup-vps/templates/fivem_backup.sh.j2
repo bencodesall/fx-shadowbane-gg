@@ -31,7 +31,7 @@ echo "FiveM server stopped successfully."
 # Backup files
 echo "Backing up server files..."
 sudo tar -czvf $BACKUP_FILE $SERVER_DIR $TXADMIN_DIR
-sudo chown $ADMIN_USER:$ADMIN_USER $BACKUP_FILE
+#sudo chown $ADMIN_USER:$ADMIN_USER $BACKUP_FILE
 
 # Backup Docker-based MySQL database
 echo "Backing up database..."
