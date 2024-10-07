@@ -10,7 +10,7 @@ DB_CONTAINER_NAME="fivem-db-{{ environment_name }}"
 SERVICE_NAME="fxserver-{{ environment_name }}"
 ADMIN_USER="{{ admin_user }}"
 FIVEM_DOCKER_NETWORK="{{ environment_name }}_{{ fivem_docker_network }}"
-FIVEM_DOCKER_VOLUME="{{ fivem_user_dir }}/{{ fivem_server_name }}_backup"
+FIVEM_DOCKER_VOLUME="/home/{{ fivem_user }}/{{ fivem_server_name }}_db_backup"
 
 # Create backup filename with timestamp
 TIMESTAMP=$(date +"%F_%H-%M-%S")
