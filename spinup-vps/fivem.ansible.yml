@@ -9,6 +9,7 @@
     - mariadb_service_name: "fivem-db-{{ environment_name }}"
     - service_dir_fxserver: "{{ fivem_user_dir }}/{{ environment_name }}"
     - service_dir_mariadb: "/var/fivem/{{ environment_name }}"
+    - backups_dir: "{{ fivem_user_dir }}/fivem_backups"
 
   pre_tasks:
     - name: Update apt package index
@@ -78,11 +79,10 @@
 
     - name: Create the fivem backups directory
       ansible.builtin.file:
-        path: "/home/{{ admin_user }}/fivem_backups"
+        path: "{{ backups_dir }}"
         state: directory
         mode: "0775"
-        owner: "{{ admin_user }}"
-        group: fivem
+        owner: "{{ fivem_user }}"
 
   tasks:
     - name: Download server binaries
