@@ -15,6 +15,8 @@ StartLimitBurst=3
 [Service]
 #Type=simple
 Type=forking
+User=fivem
+Group=fivem
 WorkingDirectory={{ service_dir_fxserver }}/server-data
 ExecStart=/usr/bin/screen -dmS {{ fx_service_name }} {{ service_dir_fxserver }}/server/run.sh +set txAdminPort {{ tx_admin_port }}
 ExecStop=/usr/bin/screen -S {{ fx_service_name }} -X quit
