@@ -96,13 +96,6 @@
       run_once: true
       register: tarball_download
 
-    - name: Change ownership of the downloaded archive
-      become: true
-      ansible.builtin.file:
-        path: "{{ archive_path }}"
-        owner: fivem
-        group: fivem
-
     - name: Ensure the server binaries are dowloaded
       ansible.builtin.file:
         path: "{{ archive_path }}"
@@ -110,6 +103,7 @@
       notify:
         - Copy server archive files
         - Extract FXServer tar file
+        - Ensure owner and group for fxserver
         - Delete server archive files
 
     - name: Ensure required directories are present
@@ -285,24 +279,27 @@
     #     group: fivem
     #     owner: fivem
 
-    - name: Extract FXServer tar file
-      become: true
-      ansible.builtin.unarchive:
-        src: "{{ archive_path }}/fx.tar.xz"
-        dest: "{{ service_dir_fxserver }}/server"
-        remote_src: true
-        group: fivem
-        owner: fivem
-        extra_opts: [ "--strip-components=1" ]
-
     # - name: Extract FXServer tar file
     #   become: true
-    #   ansible.builtin.command:
-    #     cmd: "tar -xf /tmp/fx.tar.xz -C /home/fivem/production/server"
-    #   register: unarchive_output
+    #   ansible.builtin.unarchive:
+    #     src: "{{ archive_path }}/fx.tar.xz"
+    #     dest: "{{ service_dir_fxserver }}/server"
+    #     remote_src: true
+    #     group: fivem
+    #     owner: fivem
+    #     extra_opts: [ "--strip-components=1" ]
 
-    # - debug:
-    #     var: unarchive_output
+    - name: Extract FXServer tar file
+      become: true
+      ansible.builtin.command:
+        cmd: "tar -xf /tmp/fx.tar.xz -C {{ service_dir_fxserver }}/server"
+      register: unarchive_output
+
+    - name: Ensure owner and group for fxserver
+      become: true
+      ansible.builtin.command:
+        cmd: "sudo chown -R fivem:fivem {{ service_dir_fxserver }}"
+      # register: unarchive_output
 
     - name: Delete server archive files
       ansible.builtin.file:
