@@ -100,10 +100,16 @@
       ansible.builtin.file:
         path: "{{ archive_path }}"
         state: file
-      notify:
-        - Copy server archive files
-        - Extract FXServer tar file
-        - Ensure owner and group for fxserver
+
+    - name: Extract FXServer tar file
+      become: true
+      ansible.builtin.command:
+        cmd: "sudo tar -xf {{ archive_path }} -C {{ service_dir_fxserver }}/server"
+
+    - name: Ensure owner and group for fxserver
+      become: true
+      ansible.builtin.command:
+        cmd: "sudo chown -R fivem:fivem {{ service_dir_fxserver }}"
 
     - name: Ensure required directories are present
       become: true
@@ -269,15 +275,7 @@
 
   handlers:
 
-    - name: Extract FXServer tar file
-      become: true
-      ansible.builtin.command:
-        cmd: "sudo tar -xf {{ archive_path }} -C {{ service_dir_fxserver }}/server"
 
-    - name: Ensure owner and group for fxserver
-      become: true
-      ansible.builtin.command:
-        cmd: "sudo chown -R fivem:fivem {{ service_dir_fxserver }}"
 
     - name: Save iptables rules
       become: true
