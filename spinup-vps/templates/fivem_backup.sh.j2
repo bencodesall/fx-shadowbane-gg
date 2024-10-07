@@ -9,6 +9,8 @@ DB_PASS="{{ mariadb_root_password }}"
 DB_CONTAINER_NAME="fivem-db-{{ environment_name }}"
 SERVICE_NAME="fxserver-{{ environment_name }}"
 ADMIN_USER="{{ admin_user }}"
+FIVEM_DOCKER_NETWORK="{{ environment_name }}_{{ fivem_docker_network }}"
+FIVEM_DOCKER_VOLUME="{{ fivem_user_dir }}/{{ fivem_server_name }}_backup"
 
 # Create backup filename with timestamp
 TIMESTAMP=$(date +"%F_%H-%M-%S")
@@ -35,7 +37,13 @@ sudo tar -czvf $BACKUP_FILE $SERVER_DIR $TXADMIN_DIR
 
 # Backup Docker-based MySQL database
 echo "Backing up database..."
-docker exec $DB_CONTAINER_NAME mysqldump -u $DB_USER -p$DB_PASS $DB_NAME > $DB_BACKUP_FILE
+#docker exec $DB_CONTAINER_NAME mysqldump -u $DB_USER -p$DB_PASS $DB_NAME > $DB_BACKUP_FILE
+
+docker run --rm --network=$FIVEM_DOCKER_NETWORK -v $FIVEM_DOCKER_VOLUME:/backup mysql:latest mysqldump --column-statistics=0 --complete-insert --routines --triggers -h $DB_CONTAINER_NAME -u root -p'$DB_PASS' $DB_NAME > $DB_BACKUP_FILE
+
+#docker run --rm --network=production_sbprod_net -v /home/debian/sbprod_backup:/backup mysql:latest mysqldump --column-statistics=0 --complete-insert --routines --triggers -h fivem-db-production -u root -p'KoVesq9GxcnqoYi!euLs' QBCoreFramework_F11C07_PROD > /home/debian/test.sql
+
+
 
 # Start the server again using systemctl
 echo "Starting FiveM server..."
