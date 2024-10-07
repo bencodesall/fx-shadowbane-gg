@@ -212,6 +212,7 @@
           - /usr/bin/curl
           - "/home/fivem/{{ environment_name }}/server/run.sh"
           - "/usr/bin/systemctl"
+          - "/usr/bin/screen"
         nopassword: true
 
     # - name: Allow txAdmin and RCON access for admin group
@@ -290,7 +291,6 @@
         daemon_reload: true
 
     - name: Enable fxserver service
-      become: true
       become_user: fivem
       ansible.builtin.systemd:
         name: "fxserver-{{ environment_name }}.service"
@@ -298,7 +298,6 @@
         state: started
 
     - name: Enable docker-compose-db service
-      become: true
       become_user: fivem
       ansible.builtin.systemd:
         name: "fivem-db-{{ environment_name }}.service"
