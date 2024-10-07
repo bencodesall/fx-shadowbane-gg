@@ -210,6 +210,7 @@
         commands: 
           - /usr/bin/mysql
           - /usr/bin/curl
+          - /usr/bin/tar
           - "/home/fivem/{{ environment_name }}/server/run.sh"
           - "/usr/bin/systemctl"
           - "/usr/bin/screen"
