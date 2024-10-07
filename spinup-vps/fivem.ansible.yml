@@ -211,6 +211,7 @@
           - /usr/bin/mysql
           - /usr/bin/curl
           - "/home/fivem/{{ environment_name }}/server/run.sh"
+          - "/usr/bin/systemctl"
         nopassword: true
 
     # - name: Allow txAdmin and RCON access for admin group
