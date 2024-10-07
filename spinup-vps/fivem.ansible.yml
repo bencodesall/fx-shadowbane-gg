@@ -78,6 +78,7 @@
       when: environment_name == 'production'
 
     - name: Create the fivem backups directory
+      become: true
       ansible.builtin.file:
         path: "{{ backups_dir }}"
         state: directory
