@@ -308,6 +308,7 @@
         name: "{{ gh_actions_username }}"
         state: present
         shell: /bin/bash
+        home: "/home/{{ gh_actions_username }}"
       when: environment_name == 'production'
 
     - name: Create .ssh directory for github actions user
