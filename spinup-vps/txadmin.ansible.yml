@@ -1,6 +1,6 @@
 ---
 - name: Prepare GitHubActions after FiveM inital txAdmin setup
-  hosts: all_servers
+  hosts: production
   vars_files:
     - vars/main.yml
     - name: Apply ACLs for `ghactions` on resources directories
