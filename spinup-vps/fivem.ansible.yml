@@ -9,7 +9,7 @@
     - mariadb_service_name: "fivem-db-{{ environment_name }}"
     - service_dir_fxserver: "{{ fivem_user_dir }}/{{ environment_name }}"
     - service_dir_mariadb: "/var/fivem/{{ environment_name }}"
-    - backups_dir: "{{ admin_user }}/fivem_backups"
+    - backups_dir: "/home/{{ admin_user }}/fivem_backups"
 
   pre_tasks:
     - name: Update apt package index
