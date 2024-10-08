@@ -311,6 +311,7 @@
       when: environment_name == 'production'
 
     - name: Create .ssh directory for github actions user
+      become: true
       ansible.builtin.file:
         path: "/home/{{ gh_actions_username }}/.ssh"
         state: directory
@@ -319,6 +320,7 @@
         group: "{{ gh_actions_username }}"
     
     - name: Add SSH key for github actions user
+      become: true
       ansible.builtin.copy:
         content:  "{{ gh_actions_public_key }}"
         dest: "/home/{{ gh_actions_username }}.ssh/authorized_keys"
@@ -327,6 +329,7 @@
         group: "{{ gh_actions_username }}"
 
     - name: Ensure SSH configuration for github actions user is in sshd_config
+      become: true
       ansible.builtin.blockinfile:
         path: /etc/ssh/sshd_config
         marker: "# {mark} Match GH Actions rule"
@@ -340,6 +343,7 @@
       when: environment_name == 'production'
     
     - name: restart SSH service to apply changes
+      become: true
       ansible.builtin.service:
         name: sshd
         state: restarted
@@ -347,6 +351,7 @@
 
   post_tasks:
     - name: Apply ACLs for `ghactions` on resources directories
+      become: true
       ansible.posix.acl:
         path: "/home/fivem/{{ environment_name }}/server/txData/{{ qb_framework_dir }}/resources"
         entity: "{{ gh_actions_username }}"
@@ -355,6 +360,7 @@
         state: present
 
     - name: Apply ACLs for `ghactions` on server.cfg files
+      become: true
       ansible.posix.acl:
         path: "/home/fivem/{{ environment_name }}/server/txData/{{ qb_framework_dir }}/server.cfg"
         entity: "{{ gh_actions_username }}"
@@ -363,6 +369,7 @@
         state: present
 
     - name: Apply default ACLs for `ghactions` on resources directories
+      become: true
       ansible.posix.acl:
         path: "/home/fivem/{{ environment_name }}/server/txData/{{ qb_framework_dir }}/resources"
         entity: "{{ gh_actions_username }}"
