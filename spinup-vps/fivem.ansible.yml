@@ -324,7 +324,7 @@
       become: true
       ansible.builtin.copy:
         content:  "{{ gh_actions_public_key }}"
-        dest: "/home/{{ gh_actions_username }}.ssh/authorized_keys"
+        dest: "/home/{{ gh_actions_username }}/.ssh/authorized_keys"
         mode: "0600"
         owner: "{{ gh_actions_username }}"
         group: "{{ gh_actions_username }}"
