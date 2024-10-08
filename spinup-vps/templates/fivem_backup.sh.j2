@@ -11,6 +11,7 @@ SERVICE_NAME="fxserver-{{ environment_name }}"
 FIVEM_USER="{{ fivem_user }}"
 FIVEM_DOCKER_NETWORK="{{ environment_name }}_{{ fivem_docker_network }}"
 FIVEM_DOCKER_BACKUP_VOLUME="/home/{{ admin_user }}/{{ fivem_server_name }}_db_backup"
+ADMIN_USER="{{ admin_user }}"
 
 # Create backup filename with timestamp
 TIMESTAMP=$(date +"%F_%H-%M-%S")
@@ -33,16 +34,16 @@ echo "FiveM server stopped successfully."
 # Backup files
 echo "Backing up server files..."
 sudo tar -czvf $FX_BACKUP_FILE $SERVER_DIR $TXADMIN_DIR
-sudo chown $FIVEM_USER:$FIVEM_USER $FX_BACKUP_FILE
+sudo chown $ADMIN_USER:$ADMIN_USER $FX_BACKUP_FILE
 
 # Backup Docker-based MySQL database
 echo "Backing up database..."
 #docker exec $DB_CONTAINER_NAME mysqldump -u $DB_USER -p$DB_PASS $DB_NAME > $DB_BACKUP_FILE
 
-docker run --rm --network=$FIVEM_DOCKER_NETWORK -v $FIVEM_DOCKER_BACKUP_VOLUME:/backup mysql:latest mysqldump --column-statistics=0 --complete-insert --routines --triggers -h $DB_CONTAINER_NAME -u root -p'$DB_PASS' $DB_NAME > $DB_BACKUP_FILE
-sudo chown $FIVEM_USER:$FIVEM_USER $DB_BACKUP_FILE
+docker run --rm --network=$FIVEM_DOCKER_NETWORK -v $FIVEM_DOCKER_BACKUP_VOLUME:/backup mysql:latest mysqldump --column-statistics=0 --complete-insert --routines --triggers -h $DB_CONTAINER_NAME -u root -p"$DB_PASS" $DB_NAME | sudo tee $DB_BACKUP_FILE > /dev/null
+sudo chown $ADMIN_USER:$ADMIN_USER $DB_BACKUP_FILE
 
-#docker run --rm --network=production_sbprod_net -v /home/debian/sbprod_backup:/backup mysql:latest mysqldump --column-statistics=0 --complete-insert --routines --triggers -h fivem-db-production -u root -p'KoVesq9GxcnqoYi!euLs' QBCoreFramework_F11C07_PROD > /home/debian/test.sql
+#docker run --rm --network=production_sbprod_net -v /home/debian/sbprod_backup:/backup mysql:latest mysqldump --column-statistics=0 --complete-insert --routines --triggers -h fivem-db-production -u root -p'KoVesq9GxcnqoYi_euLs' QBCoreFramework_F11C07_PROD > /home/debian/test.sql
 
 
 
