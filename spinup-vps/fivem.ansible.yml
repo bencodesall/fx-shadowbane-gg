@@ -9,7 +9,7 @@
     - mariadb_service_name: "fivem-db-{{ environment_name }}"
     - service_dir_fxserver: "{{ fivem_user_dir }}/{{ environment_name }}"
     - service_dir_mariadb: "/var/fivem/{{ environment_name }}"
-    - backups_dir: "{{ fivem_user_dir }}/fivem_backups"
+    - backups_dir: "{{ admin_user }}/fivem_backups"
 
   pre_tasks:
     - name: Update apt package index
@@ -83,8 +83,8 @@
         path: "{{ backups_dir }}"
         state: directory
         mode: "0775"
-        owner: "{{ fivem_user }}"
-        group: "{{ fivem_user }}"
+        owner: "{{ admin_user }}"
+        group: "{{ admin_user }}"
 
   tasks:
     - name: Download server binaries
@@ -135,8 +135,8 @@
         src: templates/fivem_backup.sh.j2
         dest: "{{ backups_dir }}/fivem_backup_{{ environment_name }}.sh"
         mode: "0755"
-        owner: debian
-        group: fivem
+        owner: "{{ admin_user }}"
+        group: "{{ admin_user }}"
 
     - name: Create restore scripts
       become: true
@@ -144,8 +144,8 @@
         src: templates/fivem_restore.sh.j2
         dest: "{{ backups_dir }}/fivem_restore_{{ environment_name }}.sh"
         mode: "0755"
-        owner: debian
-        group: fivem
+        owner: "{{ admin_user }}"
+        group: "{{ admin_user }}"
 
     - name: Setup docker-compose file for txAdmin database
       become: true
@@ -219,6 +219,7 @@
           - "/usr/bin/screen"
           - "/usr/bin/docker"
           - "/usr/bin/docker-compose"
+          - "/home"
         nopassword: true
 
     # # TODO: Get these working
