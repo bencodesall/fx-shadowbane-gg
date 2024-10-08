@@ -118,6 +118,16 @@
         - "{{ service_dir_fxserver }}/server"
         - "{{ service_dir_mariadb }}"
         - "{{ service_dir_mariadb }}/mariadb_data"
+        - "{{ backups_dir }}"
+
+    - name: Ensure backup directory is present
+      become: true
+      ansible.builtin.file:
+        path: "{{ backups_dir }}"
+        state: directory
+        mode: '0775'
+        group: "{{ admin_user }}"
+        owner: "{{ admin_user }}"
 
     - name: Extract FXServer tar file
       become: true
