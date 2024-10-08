@@ -36,6 +36,7 @@
           - docker.io
           - docker-compose
           - neovim
+          - rsync
         state: present
         update_cache: true
       when: environment_name == 'production'
@@ -68,6 +69,10 @@
         # system: true
         create_home: true
       when: environment_name == 'production'
+
+
+    
+
 
     - name: Add the current user to the Docker and FiveM Admins groups
       become: true
@@ -296,8 +301,75 @@
         owner: fivem
         group: fivem
         mode: "0775"
+    
+    - name: Create github actions user
+      become: true
+      ansible.builtin.user:
+        name: "{{ gh_actions_username }}"
+        state: present
+        shell: /bin/bash
+      when: environment_name == 'production'
+
+    - name: Create .ssh directory for github actions user
+      ansible.builtin.file:
+        path: "/home/{{ gh_actions_username }}/.ssh"
+        state: directory
+        mode: "0700"
+        owner: "{{ gh_actions_username }}"
+        group: "{{ gh_actions_username }}"
+    
+    - name: Add SSH key for github actions user
+      ansible.builtin.copy:
+        content:  "{{ gh_actions_public_key }}"
+        dest: "/home/{{ gh_actions_username }}.ssh/authorized_keys"
+        mode: "0600"
+        owner: "{{ gh_actions_username }}"
+        group: "{{ gh_actions_username }}"
+
+    - name: Ensure SSH configuration for github actions user is in sshd_config
+      ansible.builtin.blockinfile:
+        path: /etc/ssh/sshd_config
+        marker: "# {mark} Match GH Actions rule"
+        block: |
+          Match User ghactions
+            ForceCommand internal-sftp
+            X11Forwarding no
+            AllowTcpForwarding no
+        state: present
+        backup: true
+      when: environment_name == 'production'
+    
+    - name: restart SSH service to apply changes
+      ansible.builtin.service:
+        name: sshd
+        state: restarted
 
 
+  post_tasks:
+    - name: Apply ACLs for `ghactions` on resources directories
+      ansible.posix.acl:
+        path: "/home/fivem/{{ environment_name }}/server/txData/{{ qb_framework_dir }}/resources"
+        entity: "{{ gh_actions_username }}"
+        etype: user
+        permissions: rwX
+        state: present
+
+    - name: Apply ACLs for `ghactions` on server.cfg files
+      ansible.posix.acl:
+        path: "/home/fivem/{{ environment_name }}/server/txData/{{ qb_framework_dir }}/server.cfg"
+        entity: "{{ gh_actions_username }}"
+        etype: user
+        permissions: rwX
+        state: present
+
+    - name: Apply default ACLs for `ghactions` on resources directories
+      ansible.posix.acl:
+        path: "/home/fivem/{{ environment_name }}/server/txData/{{ qb_framework_dir }}/resources"
+        entity: "{{ gh_actions_username }}"
+        etype: user
+        permissions: rwX
+        state: present
+        default: true
 
   handlers:
 

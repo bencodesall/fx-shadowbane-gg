@@ -8,6 +8,8 @@ DB_USER="root"
 DB_PASS="{{ mariadb_root_password }}"
 DB_CONTAINER_NAME="fivem-db-{{ environment_name }}"
 SERVICE_NAME="fxserver-{{ environment_name }}"
+FIVEM_DOCKER_NETWORK="{{ environment_name }}_{{ fivem_docker_network }}"
+FIVEM_DOCKER_BACKUP_VOLUME="/home/{{ admin_user }}/{{ fivem_server_name }}_db_backup"
 
 # Check if a filename is provided
 if [ -z "$1" ]; then
@@ -54,9 +56,23 @@ echo "FiveM server stopped successfully."
 echo "Restoring server files from $BACKUP_FILE..."
 sudo tar -xzvf $BACKUP_FILE -C /  # Extract backup to root directories
 
+
+# Create the database if it doesn't exist
+echo "Creating database $DB_NAME if it does not exist..."
+#docker exec -i $DB_CONTAINER_NAME mysql -u $DB_USER -p"$DB_PASS" -e "CREATE DATABASE IF NOT EXISTS $DB_NAME;"
+#docker exec -i $DB_CONTAINER_NAME mysql -u $DB_USER -p"$DB_PASS" -e "CREATE DATABASE IF NOT EXISTS $DB_NAME;"
+docker run --rm --network=$FIVEM_DOCKER_NETWORK mysql:latest mysql -h $DB_CONTAINER_NAME -u $DB_USER -p"$DB_PASS" -e "CREATE DATABASE IF NOT EXISTS $DB_NAME;"
+if [ $? -ne 0 ]; then
+    echo "Error: Failed to create database $DB_NAME."
+    exit 1
+fi
+
+
 # Restore MySQL database
 echo "Restoring database from $DB_BACKUP_FILE..."
-docker exec -i $DB_CONTAINER_NAME mysql -u $DB_USER -p$DB_PASS $DB_NAME < $DB_BACKUP_FILE
+#docker exec -i $DB_CONTAINER_NAME mysql -u $DB_USER -p$DB_PASS $DB_NAME < $DB_BACKUP_FILE
+docker run --rm --network=$FIVEM_DOCKER_NETWORK -v "$FIVEM_DOCKER_BACKUP_VOLUME:/backup" mysql:latest mysql -h $DB_CONTAINER_NAME -u $DB_USER -p"$DB_PASS" $DB_NAME < "$DB_BACKUP_FILE"
+
 
 # Start the server again using systemctl
 echo "Starting FiveM server..."
