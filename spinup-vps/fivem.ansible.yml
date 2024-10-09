@@ -36,6 +36,7 @@
           - docker.io
           - docker-compose
           - neovim
+          - acl
           - rsync
         state: present
         update_cache: true
@@ -70,10 +71,6 @@
         create_home: true
       when: environment_name == 'production'
 
-
-    
-
-
     - name: Add the current user to the Docker and FiveM Admins groups
       become: true
       ansible.builtin.user:
@@ -101,8 +98,9 @@
       retries: 3
       delay: 5
       delegate_to: localhost
-      run_once: true
-      register: tarball_download
+      when: environment_name == "production"
+      # run_once: true
+      # register: tarball_download
 
     - name: Ensure the server binaries are dowloaded
       ansible.builtin.file:
@@ -138,11 +136,15 @@
       become: true
       ansible.builtin.command:
         cmd: "sudo tar -xf {{ archive_path }} -C {{ service_dir_fxserver }}/server"
+      register: ok_extracted
+      changed_when: ok_extracted.rc != 0
 
     - name: Ensure owner and group for fxserver
       become: true
       ansible.builtin.command:
         cmd: "sudo chown -R fivem:fivem {{ service_dir_fxserver }}"
+      register: ok_fx_owner
+      changed_when: ok_fx_owner.rc != 0
 
     - name: Create backup scripts
       become: true
@@ -225,16 +227,16 @@
       community.general.sudoers:
         name: fivem
         user: "%fivem"
-        commands: 
+        commands:
           - /usr/bin/mysql
           - /usr/bin/curl
           - /usr/bin/tar
+          - /usr/bin/unzip
           - "/home/fivem/{{ environment_name }}/server/run.sh"
           - "/usr/bin/systemctl"
           - "/usr/bin/screen"
           - "/usr/bin/docker"
           - "/usr/bin/docker-compose"
-          - "/home"
         nopassword: true
 
     # # TODO: Get these working
@@ -243,7 +245,7 @@
     #   community.general.sudoers:
     #     name: fivem
     #     user: "%fivem"
-    #     commands: 
+    #     commands:
     #       - /usr/bin/mysql
     #       - /usr/bin/curl
     #       - "/home/fivem/{{ environment_name }}/server/run.sh"
@@ -301,7 +303,7 @@
         owner: fivem
         group: fivem
         mode: "0775"
-    
+
     - name: Create github actions user
       become: true
       ansible.builtin.user:
@@ -319,11 +321,11 @@
         mode: "0700"
         owner: "{{ gh_actions_username }}"
         group: "{{ gh_actions_username }}"
-    
+
     - name: Add SSH key for github actions user
       become: true
       ansible.builtin.copy:
-        content:  "{{ gh_actions_public_key }}"
+        content: "{{ gh_actions_public_key }}"
         dest: "/home/{{ gh_actions_username }}/.ssh/authorized_keys"
         mode: "0600"
         owner: "{{ gh_actions_username }}"
@@ -342,8 +344,8 @@
         state: present
         backup: true
       when: environment_name == 'production'
-    
-    - name: restart SSH service to apply changes
+
+    - name: Restart SSH service to apply changes
       become: true
       ansible.builtin.service:
         name: sshd
