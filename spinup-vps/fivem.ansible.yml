@@ -313,6 +313,18 @@
         home: "/home/{{ gh_actions_username }}"
       when: environment_name == 'production'
 
+    - name: Allow txAdmin and RCON access for admin group
+      become: true
+      community.general.sudoers:
+        name: "{{ gh_actions_username }}"
+        user: "%{{ gh_actions_username }}"
+        commands:
+          - /usr/bin/tar
+          - /usr/bin/unzip
+          - "/usr/bin/systemctl"
+        nopassword: true
+      when: environment_name == 'production'
+
     - name: Create .ssh directory for github actions user
       become: true
       ansible.builtin.file:
@@ -321,6 +333,7 @@
         mode: "0700"
         owner: "{{ gh_actions_username }}"
         group: "{{ gh_actions_username }}"
+      when: environment_name == 'production'
 
     - name: Add SSH key for github actions user
       become: true
@@ -330,6 +343,7 @@
         mode: "0600"
         owner: "{{ gh_actions_username }}"
         group: "{{ gh_actions_username }}"
+      when: environment_name == 'production'
 
     - name: Ensure SSH configuration for github actions user is in sshd_config
       become: true
@@ -350,6 +364,7 @@
       ansible.builtin.service:
         name: sshd
         state: restarted
+      when: environment_name == 'production'
 
   handlers:
 
