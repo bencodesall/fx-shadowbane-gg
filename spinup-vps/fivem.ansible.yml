@@ -321,7 +321,8 @@
         commands:
           - /usr/bin/tar
           - /usr/bin/unzip
-          - "/usr/bin/systemctl"
+          - /usr/bin/systemctl
+          - /user/bin/chown
         nopassword: true
       when: environment_name == 'production'
 
