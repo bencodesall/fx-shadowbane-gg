@@ -17,7 +17,7 @@ jobs:
         id: get_latest_tag
         run: |
           latest_tag=$(git describe --tags --abbrev=0)
-          echo "latest_tag=${latest_tag:-v0.0.0}" >> $GITHUB_ENV
+          echo "latest_tag=${latest_tag}" >> $GITHUB_ENV
 
       - name: Increment version
         id: increment_version
