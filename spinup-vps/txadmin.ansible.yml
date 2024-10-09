@@ -26,7 +26,7 @@
     - name: Apply default ACLs for `ghactions` on resources directories
       become: true
       ansible.posix.acl:
-        path: "/home/fivem/{{ environment_name }}/server/txData/{{ qb_framework_dir }}/resources/'[qb]'"
+        path: "/home/fivem/{{ environment_name }}/server/txData/{{ qb_framework_dir }}/resources/[qb]"
         entity: "{{ gh_actions_username }}"
         etype: user
         permissions: rwx
