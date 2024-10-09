@@ -53,7 +53,7 @@ jobs:
 
       - name: Upload custom scripts and plugins via SFTP
         run: |
-          scp -r ./vendor ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/home/fivem/production/server/fxData/${{ secrets.FX_DIR }}/resources/[qb]
+          scp -r ./vendor ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/home/fivem/production/server/fxData/${{ secrets.FX_DIR }}/resources/\[qb\]
 
       - name: Chown fivem:fivem for resources folder
         run: |

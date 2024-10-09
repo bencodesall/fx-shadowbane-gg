@@ -352,7 +352,6 @@
         marker: "# {mark} Match GH Actions rule"
         block: |
           Match User ghactions
-            ForceCommand internal-sftp
             X11Forwarding no
             AllowTcpForwarding no
         state: present
