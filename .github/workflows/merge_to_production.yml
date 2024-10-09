@@ -9,6 +9,9 @@ on:
 jobs:
   tag_and_deploy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
     steps:
       - name: Check out the code with tags
         uses: actions/checkout@v3
