@@ -19,8 +19,9 @@
         path: "/home/fivem/{{ environment_name }}/server/txData/{{ qb_framework_dir }}/server.cfg"
         entity: "{{ gh_actions_username }}"
         etype: user
-        permissions: rwX
+        permissions: rwx
         state: present
+        recurse: true
 
     - name: Apply default ACLs for `ghactions` on resources directories
       become: true
@@ -28,6 +29,6 @@
         path: "/home/fivem/{{ environment_name }}/server/txData/{{ qb_framework_dir }}/resources/'[qb]'"
         entity: "{{ gh_actions_username }}"
         etype: user
-        permissions: rwX
+        permissions: rwx
         state: present
         default: true
