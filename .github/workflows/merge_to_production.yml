@@ -50,10 +50,11 @@ jobs:
       - name: Add VPS to known_hosts
         run: |
           ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+          cat ~/.ssh/known_hosts
 
       - name: Upload custom scripts and plugins via SFTP
         run: |
-          scp -r ./vendor/* ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/home/fivem/production/server/txData/${{ secrets.FX_DIR }}/resources/[qb]
+          scp -v -r ./vendor/* ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/home/fivem/production/server/txData/${{ secrets.FX_DIR }}/resources/[qb]
 
       - name: Chown fivem:fivem for resources folder
         run: |
