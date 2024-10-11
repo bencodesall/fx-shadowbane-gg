@@ -270,7 +270,6 @@
         name: github.com
         key: "{{ lookup('pipe', 'ssh-keyscan -t rsa github.com') }}"
         path: /etc/ssh/ssh_known_hosts
-        create: true
 
 # TODO: See if this can be refactored
     - name: Configure Git to treat the directory as safe
