@@ -61,6 +61,7 @@
       become: true
       ansible.builtin.user:
         name: fivem
+        group: fivem
         groups:
           - fivem
           - docker
@@ -84,7 +85,7 @@
       ansible.builtin.file:
         path: "{{ backups_dir }}"
         state: directory
-        mode: "0775"
+        mode: "0755"
         owner: "{{ admin_user }}"
         group: "{{ admin_user }}"
 
@@ -112,7 +113,7 @@
       ansible.builtin.file:
         path: "{{ item }}"
         state: directory
-        mode: '0775'
+        mode: '0755'
         group: fivem
         owner: fivem
       loop:
@@ -128,21 +129,23 @@
       ansible.builtin.file:
         path: "{{ backups_dir }}"
         state: directory
-        mode: '0775'
+        mode: '0755'
         group: "{{ admin_user }}"
         owner: "{{ admin_user }}"
 
     - name: Extract FXServer tar file
       become: true
       ansible.builtin.command:
-        cmd: "sudo tar -xf {{ archive_path }} -C {{ service_dir_fxserver }}/server"
+        # cmd: "sudo tar -xf {{ archive_path }} -C {{ service_dir_fxserver }}/server"
+        cmd: "tar -xf {{ archive_path }} -C {{ service_dir_fxserver }}/server"
       register: ok_extracted
       changed_when: ok_extracted.rc != 0
 
     - name: Ensure owner and group for fxserver
       become: true
       ansible.builtin.command:
-        cmd: "sudo chown -R fivem:fivem {{ service_dir_fxserver }}"
+        # cmd: "sudo chown -R fivem:fivem {{ service_dir_fxserver }}"
+        cmd: "chown -R fivem:fivem {{ service_dir_fxserver }}"
       register: ok_fx_owner
       changed_when: ok_fx_owner.rc != 0
 
@@ -267,6 +270,7 @@
         name: github.com
         key: "{{ lookup('pipe', 'ssh-keyscan -t rsa github.com') }}"
         path: /etc/ssh/ssh_known_hosts
+        create: true
 
 # TODO: See if this can be refactored
     - name: Configure Git to treat the directory as safe
@@ -302,7 +306,7 @@
         # owner: "{{ fx_service_name }}"
         owner: fivem
         group: fivem
-        mode: "0775"
+        mode: "0755"
 
     - name: Create github actions user
       become: true
